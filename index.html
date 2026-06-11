@@ -10,7 +10,7 @@
         .container { width: 100%; min-height: 100vh; margin: 0; padding: 0; background-color: #fff; display: flex; flex-direction: column; }
         @media (min-width: 601px) { .container { width: 600px; margin: 0 auto; box-shadow: 0 0 20px rgba(0,0,0,0.1); } }
         
-        /* 🌿 헤더: 세련된 포레스트 그린 적용 */
+        /* 🌿 헤더: 세련된 포레스트 그린 & 소프트 골드 하단 라인 */
         .header { width: 100%; padding: calc(20px + env(safe-area-inset-top)) 20px 16px 20px; background-color: #1e3d2f; color: white; position: sticky; top: 0; z-index: 100; border-bottom: 3px solid #d4af37; }
         .header h2 { margin: 0 0 12px 0; font-weight: 600; font-size: 22px; text-align: center; letter-spacing: 0.5px; }
         
@@ -25,12 +25,10 @@
         #resultList li strong { font-size: 17px; color: #1e3d2f; display: block; margin-bottom: 6px; font-weight: 600; }
         #resultList li span { font-size: 14px; color: #666; display: block; line-height: 1.5; }
         
+        /* 🎼 악보 뷰어 영역 */
         #imageSection { display: none; padding: calc(15px + env(safe-area-inset-top)) 15px calc(25px + env(safe-area-inset-bottom)) 15px; width: 100%; background-color: #ffffff; }
         .back-btn { width: 100%; padding: 14px; font-size: 16px; background-color: #7f8c8d; color: white; border: none; border-radius: 8px; margin-bottom: 15px; cursor: pointer; font-weight: bold; }
         
-        .audio-container { margin-bottom: 15px; padding: 18px; background: #f8f9fa; border-radius: 12px; border: 1px solid #eaeaea; }
-        .audio-btns { display: flex; gap: 10px; margin-bottom: 12px; }
-        .play-btn { flex: 1; padding: 14px; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; }
         img { width: 100%; height: auto; display: block; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-radius: 6px; }
         .empty-msg { padding: 100px 20px; color: #999; text-align: center; font-size: 15px; line-height: 1.6; }
     </style>
@@ -53,21 +51,12 @@
 
     <div id="imageSection">
         <button class="back-btn" onclick="showList()">⬅️ 목록으로 돌아가기</button>
-        <div class="audio-container">
-            <div class="audio-btns">
-                <button class="play-btn" style="background-color: #2e5a44;" onclick="playCCM('SING')">🎤 찬양 재생</button>
-                <button class="play-btn" style="background-color: #cca43b;" onclick="playCCM('INST')">🎹 반주 재생</button>
-            </div>
-            <audio id="ccmAudio" controls style="width: 100%; display: none;"></audio>
-            <p id="audioStatus" style="font-size: 13px; color: #777; margin: 0; text-align: center; font-weight: 500;">원하는 모드를 선택해 주세요.</p>
-        </div>
         <div id="imageCanvas"></div>
     </div>
 </div>
 
 <script>
 let ccmData = []; 
-let currentTitle = ""; 
 
 window.onload = function() {
     fetch('ccm_data.json')
@@ -120,16 +109,7 @@ function searchCCM() {
 
 function showImage(title) {
     const canvas = document.getElementById('imageCanvas');
-    const audio = document.getElementById('ccmAudio');
     canvas.innerHTML = ''; 
-    currentTitle = title;
-
-    if (audio) {
-        audio.pause();
-        audio.src = "";
-        audio.style.display = 'none';
-        document.getElementById('audioStatus').innerText = "원하는 모드를 선택해 주세요.";
-    }
 
     const img = document.createElement('img');
     img.src = `images/${title}.jpg`; 
@@ -144,28 +124,7 @@ function showImage(title) {
     window.scrollTo(0, 0); 
 }
 
-function playCCM(type) {
-    const audio = document.getElementById('ccmAudio');
-    const status = document.getElementById('audioStatus');
-    const baseUrl = "https://pub-3e09c4a7bdce410d81cd2b400a526c9f.r2.dev"; 
-    
-    const fileUrl = `${baseUrl}/AUDIO/${type}/${currentTitle}.mp3`;
-    
-    audio.src = fileUrl;
-    audio.style.display = 'block';
-    status.innerText = "🎵 음원 로딩 중...";
-    audio.play().then(() => {
-        status.innerText = (type === 'SING' ? "🎤 찬양" : "🎹 반주") + " 재생 중";
-    }).catch(() => {
-        status.innerText = "❌ 등록된 음원이 없습니다.";
-        audio.style.display = 'none';
-    });
-}
-
-// 목록으로 돌아가기
 function showList() {
-    const audio = document.getElementById('ccmAudio');
-    if (audio) audio.pause();
     document.getElementById('imageSection').style.display = 'none';
     document.getElementById('searchView').style.display = 'block';
 }
