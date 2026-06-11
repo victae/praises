@@ -55,3 +55,12 @@ jobs:
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add ccm_data.json
           git diff --quiet && git diff --staged --quiet || (git commit -m \"🤖 자동 업데이트: ccm_data.json 생성\" && git push)
+
+
+name: Generate CCM Data
+
+on:
+  push:
+    paths:
+      - 'lyrics/**'
+  workflow_dispatch: # 👈 이 줄을 새로 추가해 줍니다! (들여쓰기 주의: push와 같은 라인)
