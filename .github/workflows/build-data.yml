@@ -3,7 +3,8 @@ name: Generate CCM Data
 on:
   push:
     paths:
-      - 'lyrics/**' # lyrics 폴더에 파일이 추가/변경될 때만 실행
+      - 'lyrics/**'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -24,26 +25,28 @@ jobs:
           import json
 
           ccm_list = []
-          # 최상위 리포지토리 루트 기준 경로 설정
           lyrics_dir = 'lyrics'
 
           if os.path.exists(lyrics_dir):
               files = sorted([f for f in os.listdir(lyrics_dir) if f.endswith('.txt')])
               for idx, filename in enumerate(files, start=1):
                   filepath = os.path.join(lyrics_dir, filename)
-                  with open(filepath, 'r', encoding='utf-8') as f:
-                      lines = f.readlines()
-                  
-                  title = os.path.splitext(filename)[0]
-                  info = lines[0].strip() if len(lines) > 0 else ''
-                  lyrics = ' '.join([line.strip() for line in lines[1:]]) if len(lines) > 1 else ''
+                  try:
+                      with open(filepath, 'r', encoding='utf-8') as f:
+                          lines = f.readlines()
+                      
+                      title = os.path.splitext(filename)[0]
+                      info = lines[0].strip() if len(lines) > 0 else ''
+                      lyrics = ' '.join([line.strip() for line in lines[1:]]) if len(lines) > 1 else ''
 
-                  ccm_list.append({
-                      'no': str(idx),
-                      'title': title,
-                      'info': info,
-                      'lyrics': lyrics
-                  })
+                      ccm_list.append({
+                          'no': str(idx),
+                          'title': title,
+                          'info': info,
+                          'lyrics': lyrics
+                      })
+                  except Exception as e:
+                      print(f'Error reading {filename}: {e}')
 
           with open('ccm_data.json', 'w', encoding='utf-8') as json_file:
               json.dump(ccm_list, json_file, ensure_ascii=False, indent=2)
@@ -54,13 +57,9 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add ccm_data.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m \"🤖 자동 업데이트: ccm_data.json 생성\" && git push)
-
-
-name: Generate CCM Data
-
-on:
-  push:
-    paths:
-      - 'lyrics/**'
-  workflow_dispatch: # 👈 이 줄을 새로 추가해 줍니다! (들여쓰기 주의: push와 같은 라인)
+          if [ -n "$(git status --porcelain ccm_data.json)" ]; then
+            git commit -m "🤖 자동 업데이트: ccm_data.json 갱신"
+            git push
+          else
+            echo "변경 사항이 없습니다."
+          fi
