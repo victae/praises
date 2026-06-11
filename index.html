@@ -70,31 +70,30 @@
 <script>
 let ccmData = []; 
 
-// 웹앱이 지원하는 악보 이미지 확장자 리스트
 const imageExtensions = ['.gif', '.bmp', '.jpg', '.jpeg', '.png'];
 
 window.onload = function() {
     fetch('ccm_data.json')
         .then(response => response.json())
         .then(data => {
-            // 가져온 가사 JSON 데이터 정제 및 출처 태깅 자동화
             ccmData = data.map(item => {
                 let currentTitle = item.title || "";
-                let bookType = "물소리"; // 기본값
+                let bookType = "물소리"; 
                 
-                if (currentTitle.includes(" - 찬미예수2000")) {
+                // 💡 JSON 데이터 내부 제목에 들어있을 수 있는 다양한 공백 형태를 제거하고 태깅합니다.
+                if (currentTitle.includes("찬미예수2000")) {
                     bookType = "찬미예수2000";
-                    currentTitle = currentTitle.replace(" - 찬미예수2000", "");
-                } else if (currentTitle.includes(" - 물소리")) {
+                    currentTitle = currentTitle.replace(/\s*-\s*찬미예수2000/, "");
+                } else if (currentTitle.includes("물소리")) {
                     bookType = "물소리";
-                    currentTitle = currentTitle.replace(" - 물소리", "");
+                    currentTitle = currentTitle.replace(/\s*-\s*물소리/, "");
                 }
                 
                 return {
                     ...item,
-                    displayTitle: currentTitle.trim(), // 깔끔한 출력용 제목
-                    book: bookType, // 출처 분류
-                    searchTitle: currentTitle.replace(/[^가-힣a-zA-Z0-9]/g, "").toLowerCase() // 검색 최적화용 순수 글자 데이터
+                    displayTitle: currentTitle.trim(), 
+                    book: bookType, 
+                    searchTitle: currentTitle.replace(/[^가-힣a-zA-Z0-9]/g, "").toLowerCase() 
                 };
             });
             
@@ -128,7 +127,6 @@ function searchCCM() {
     filtered.forEach(ccm => {
         const li = document.createElement('li');
         
-        // 출처 뱃지 클래스 분기
         const badgeClass = ccm.book === '찬미예수2000' ? 'badge chanmi' : 'badge mulsori';
         const titleText = `<strong>${ccm.displayTitle} <span class="${badgeClass}">${ccm.book}</span></strong>`;
         
@@ -145,48 +143,48 @@ function searchCCM() {
         }
 
         li.innerHTML = titleText + previewText;
-        
-        // 클릭 시 가사 정보 바탕으로 유연하게 이미지 폴백 서칭 시도
         li.onclick = () => showImage(ccm.displayTitle, ccm.book, ccm.id); 
         resultList.appendChild(li);
     });
 }
 
+// 💡 핵심 수정 영역: 파일 이름 매칭 시 모든 공백(\s)을 완전히 압축하여 정밀 조준합니다.
 function showImage(title, book, id) {
     const canvas = document.getElementById('imageCanvas');
     canvas.innerHTML = ''; 
 
     let srcUrls = [];
     const padId = id ? String(id).padStart(4, '0') : "";
-    const t = title.trim();
+    
+    // 제목에서 공백을 완전히 없앤 버전도 준비 (예: "나를 사랑하는 자들이" -> "나를사랑하는자들이")
+    const cleanT = title.replace(/\s+/g, "");
 
-    // 실제 로컬 파일 시스템 내 저장 형태의 미세 공백 변수들을 모두 대입하여 후보군 설계
     imageExtensions.forEach(ext => {
         if (book === '찬미예수2000') {
-            // 1) 고유 ID가 들어간 충돌 회피형 패턴 검사
+            // 1) 공백 없는 충돌 회피형 패턴 (가라_1483-찬미예수2000.bmp)
             if (padId) {
-                srcUrls.push(`images/${t}_${padId} - 찬미예수2000${ext}`);
-                srcUrls.push(`images/${t}_${padId}-찬미예수2000${ext}`);
+                srcUrls.push(`images/${cleanT}_${padId}-찬미예수2000${ext}`);
+                srcUrls.push(`images/${title.trim()}_${padId} - 찬미예수2000${ext}`); // 기존 포맷도 백업용 유지
             }
-            // 2) 일반형 패턴 검사 (공백 존재 유무 다변화)
-            srcUrls.push(`images/${t} - 찬미예수2000${ext}`);
-            srcUrls.push(`images/${t}-찬미예수2000${ext}`);
-            // 3) 초기 원본 백업형 패턴 검사
+            // 2) 공백이 완전히 통제된 찬미예수 패턴들
+            srcUrls.push(`images/${cleanT}-찬미예수2000${ext}`);
+            srcUrls.push(`images/${title.trim()} - 찬미예수2000${ext}`);
             if (padId) {
-                srcUrls.push(`images/${padId}${t}${ext}`);
+                srcUrls.push(`images/${padId}${cleanT}${ext}`);
+                srcUrls.push(`images/${padId}${title.trim()}${ext}`);
             }
         } else {
-            // 1) 물소리형 패턴 검사 (사진 피드백 기준 공백 없음 최우선순위 부여)
-            srcUrls.push(`images/${t}-물소리${ext}`);
-            srcUrls.push(`images/${t} - 물소리${ext}`);
-            srcUrls.push(`images/${t}${ext}`);
+            // 3) 물소리 패턴들 (공백 압축 버전 최우선 대입)
+            srcUrls.push(`images/${cleanT}-물소리${ext}`);
+            srcUrls.push(`images/${title.trim()}-물소리${ext}`);
+            srcUrls.push(`images/${title.trim()} - 물소리${ext}`);
+            srcUrls.push(`images/${cleanT}${ext}`);
         }
     });
 
     const img = document.createElement('img');
     let currentAttemptIndex = 0;
 
-    // 브라우저 내부 폴백 루프 엔진
     function tryLoadImage() {
         if (currentAttemptIndex >= srcUrls.length) {
             canvas.innerHTML = `
@@ -196,7 +194,7 @@ function showImage(title, book, id) {
                         (출처: ${book} / 번호: ${padId || '없음'})
                     </small>
                     <small style="color:#bbb; font-size:12px; display:block; margin-top:4px;">
-                        images/ 폴더 내 파일명과 가사 제목 텍스트가 서로 정확히 같은지 확인해 주세요.
+                        images/ 폴더 내 실제 악보 파일명과 매칭이 실패했습니다. 
                     </small>
                 </div>`;
             return;
@@ -218,11 +216,6 @@ function showImage(title, book, id) {
     document.getElementById('searchView').style.display = 'none';
     document.getElementById('imageSection').style.display = 'block';
     window.scrollTo(0, 0); 
-}
-
-function showList() {
-    document.getElementById('imageSection').style.display = 'none';
-    document.getElementById('searchView').style.display = 'block';
 }
 </script>
 </body>
