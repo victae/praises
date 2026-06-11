@@ -29,8 +29,13 @@
         #resultList { list-style: none; padding: 0; margin: 0; width: 100%; }
         #resultList li { padding: 18px 20px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.2s; }
         #resultList li:hover { background-color: #f9faf9; }
-        #resultList li strong { font-size: 17px; color: #1e3d2f; display: block; margin-bottom: 6px; font-weight: 600; }
+        #resultList li strong { font-size: 17px; color: #1e3d2f; display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-weight: 600; }
         #resultList li span { font-size: 14px; color: #666; display: block; line-height: 1.5; }
+        
+        /* 🏷️ 출처 표시를 위한 UI 뱃지 스타일 */
+        .badge { display: inline-block; padding: 2px 6px; font-size: 11px; font-weight: bold; border-radius: 4px; color: white; }
+        .badge.chanmi { background-color: #cca43b; } /* 찬미예수 골드 */
+        .badge.mulsori { background-color: #2e5a44; } /* 물소리 그린 */
         
         /* 🎼 악보 뷰어 영역 */
         #imageSection { display: none; padding: calc(15px + env(safe-area-inset-top)) 15px calc(25px + env(safe-area-inset-bottom)) 15px; width: 100%; background-color: #ffffff; }
@@ -65,11 +70,37 @@
 <script>
 let ccmData = []; 
 
+// 💡 [중요] 악보 이미지 파일 확장자가 다양하거나 뒤에 접미사가 붙기 때문에 
+// 브라우저에서 동적으로 매칭을 시도할 이미지 확장자 후보군 리스트입니다.
+const imageExtensions = ['.gif', '.bmp', '.jpg', '.jpeg', '.png'];
+
 window.onload = function() {
     fetch('ccm_data.json')
         .then(response => response.json())
         .then(data => {
-            ccmData = data;
+            // 가져온 JSON 데이터 정제 및 출처 분류 자동화 추가
+            ccmData = data.map(item => {
+                // 기존 구조에 title이 정의되어 있지 않고파일명 기반이거나 데이터 형태에 매칭될 때 보정
+                // 만약 json에 'title'이 있으면 쓰고 없으면 파일명 유추 처리
+                let currentTitle = item.title || "";
+                let bookType = "물소리"; // 기본값 설정
+                
+                if (currentTitle.includes(" - 찬미예수2000")) {
+                    bookType = "찬미예수2000";
+                    currentTitle = currentTitle.replace(" - 찬미예수2000", "");
+                } else if (currentTitle.includes(" - 물소리")) {
+                    bookType = "물소리";
+                    currentTitle = currentTitle.replace(" - 물소리", "");
+                }
+                
+                return {
+                    ...item,
+                    displayTitle: currentTitle.trim(), // 화면에 이쁘게 보일 제목
+                    book: bookType, // 출처 분류 태그
+                    searchTitle: currentTitle.replace(/[^가-힣a-zA-Z0-9]/g, "").toLowerCase() // 공백/특수문자 제거 검색용 깨끗한 제목
+                };
+            });
+            
             document.getElementById('resultList').innerHTML = '<div class="empty-msg">💡 닫힌 찬양의 문을 두드려보세요.<br>제목 또는 가사로 검색이 가능합니다.</div>';
         })
         .catch(err => {
@@ -80,15 +111,16 @@ window.onload = function() {
 
 function searchCCM() {
     const input = document.getElementById('searchInput').value.trim().toLowerCase();
+    const cleanInput = input.replace(/[^가-힣a-zA-Z0-9]/g, ""); // 검색어도 공백/특문 제거 매칭율 상승
     const resultList = document.getElementById('resultList');
     resultList.innerHTML = ''; 
     
     if (!input) return;
 
     const filtered = ccmData.filter(ccm => 
-        ccm.title.toLowerCase().includes(input) || 
-        ccm.info.toLowerCase().includes(input) ||
-        ccm.lyrics.toLowerCase().includes(input)
+        ccm.displayTitle.toLowerCase().includes(input) || 
+        cleanInput && ccm.searchTitle.includes(cleanInput) ||
+        (ccm.lyrics && ccm.lyrics.toLowerCase().includes(input))
     );
 
     if (filtered.length === 0) {
@@ -98,33 +130,85 @@ function searchCCM() {
 
     filtered.forEach(ccm => {
         const li = document.createElement('li');
-        const titleText = `<strong>${ccm.title} <small style="color:#cca43b; font-weight:normal; font-size:13px;">(${ccm.info})</small></strong>`;
+        
+        // 출처에 따른 뱃지 스타일 템플릿 처리
+        const badgeClass = ccm.book === '찬미예수2000' ? 'badge chanmi' : 'badge mulsori';
+        const titleText = `<strong>${ccm.displayTitle} <span class="${badgeClass}">${ccm.book}</span></strong>`;
         
         let previewText = "";
-        const idx = ccm.lyrics.toLowerCase().indexOf(input);
-        if (idx > -1) {
-            previewText = `<span>...${ccm.lyrics.substring(idx, idx + 30)}...</span>`;
+        if (ccm.lyrics) {
+            const idx = ccm.lyrics.toLowerCase().indexOf(input);
+            if (idx > -1) {
+                previewText = `<span>...${ccm.lyrics.substring(idx, idx + 30)}...</span>`;
+            } else {
+                previewText = `<span>${ccm.lyrics.substring(0, 35)}...</span>`;
+            }
         } else {
-            previewText = `<span>${ccm.lyrics.substring(0, 35)}...</span>`;
+            previewText = `<span>가사 정보가 없습니다.</span>`;
         }
 
         li.innerHTML = titleText + previewText;
-        li.onclick = () => showImage(ccm.title); 
+        
+        // 💡 중요 클릭 이벤트: 클릭 시 순수제목, 책출처, 혹시 모를 고유 ID(id)를 함께 전달하여 악보를 영리하게 찾음
+        li.onclick = () => showImage(ccm.displayTitle, ccm.book, ccm.id); 
         resultList.appendChild(li);
     });
 }
 
-function showImage(title) {
+// 💡 핵심 개선 기능: 1대1 매칭 실패를 예방하기 위해 여러 조합으로 이미지 로딩을 시도합니다.
+function showImage(title, book, id) {
     const canvas = document.getElementById('imageCanvas');
     canvas.innerHTML = ''; 
 
-    const img = document.createElement('img');
-    img.src = `images/${title}.jpg`; 
+    // 찾을 이미지 소스 후보 순서 정립 (우선순위 체계 구축)
+    let srcUrls = [];
     
-    img.onerror = () => {
-        canvas.innerHTML = `<div class="empty-msg">'${title}.jpg' 악보 이미지가 없습니다.</div>`;
+    // 자릿수 패딩용 함수 정의 (예: 13 -> "0013")
+    const padId = id ? String(id).padStart(4, '0') : "";
+
+    imageExtensions.forEach(ext => {
+        if (book === '찬미예수2000') {
+            // 찬미예수일 경우 후보군 생성 규칙
+            if(padId) {
+                srcUrls.push(`images/${title}_${padId} - 찬미예수2000${ext}`); // 충돌 해결형 파일명 우선 매칭
+            }
+            srcUrls.push(`images/${title} - 찬미예수2000${ext}`); // 기본 구조 파일명 매칭
+            if(padId) {
+                srcUrls.push(`images/${padId}${title}${ext}`); // 원본 백업형 파일명 매칭
+            }
+        } else {
+            // 물소리일 경우 후보군 생성 규칙
+            srcUrls.push(`images/${title} - 물소리${ext}`);
+            srcUrls.push(`images/${title}${ext}`);
+        }
+    });
+
+    const img = document.createElement('img');
+    let currentAttemptIndex = 0;
+
+    // 🔄 똑똑한 연속 폴백(Fallback) 함수: 이미지가 로드 실패(onerror)하면 다음 매칭 주소 후보군으로 재시도
+    function tryLoadImage() {
+        if (currentAttemptIndex >= srcUrls.length) {
+            // 모든 후보군을 다 찔러봐도 이미지가 진짜 없는 경우 최종 에러 메시지 노출
+            canvas.innerHTML = `<div class="empty-msg">'${title}' 악보 이미지를 찾을 수 없습니다.<br><small style="color:#aaa;">(확인한 경로: images/ 폴더 내 파일명 패턴 불일치)</small></div>`;
+            return;
+        }
+        img.src = srcUrls[currentAttemptIndex];
+        currentAttemptIndex++;
+    }
+
+    img.onload = () => {
+        // 이미지 로드에 성공하면 캔버스에 안착시킴
+        canvas.appendChild(img);
     };
-    canvas.appendChild(img);
+
+    img.onerror = () => {
+        // 실패 시 다음 주소 규칙으로 다음 시도 처리
+        tryLoadImage();
+    };
+
+    // 첫 번째 시도 시작
+    tryLoadImage();
 
     document.getElementById('searchView').style.display = 'none';
     document.getElementById('imageSection').style.display = 'block';
