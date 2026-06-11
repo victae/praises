@@ -25,7 +25,7 @@ jobs:
 
         ccm_list = []
         # 현재 위치가 praises 안이므로 상대 경로로 지정
-        lyrics_dir = 'praises/lyrics'
+        lyrics_dir = 'lyrics'
 
         if os.path.exists(lyrics_dir):
             files = sorted([f for f in os.listdir(lyrics_dir) if f.endswith('.txt')])
