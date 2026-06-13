@@ -76,7 +76,7 @@ let ccmData = [];
 const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']; // 💡 스마트폰 최적화 순서로 재정렬
 
 window.onload = function() {
-    fetch('ccm_data.json?v=5')
+    fetch('ccm_data.json?v=6')
         .then(response => response.json())
         .then(data => {
             ccmData = data.map(item => {
