@@ -26,25 +26,22 @@
         .search-btn:hover { background-color: #3b7055; }
         
         #resultList { list-style: none; padding: 0; margin: 0; width: 100%; }
-        #resultList li { padding: 18px 20px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.2s; }
+        #resultList li { padding: 18px 20px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.2s; display: flex; flex-direction: column; gap: 2px; }
         #resultList li:hover { background-color: #f9faf9; }
-        #resultList li strong { font-size: 17px; color: #1e3d2f; display: flex; align-items: center; gap: 6px; font-weight: 600; }
+        #resultList li .title-row { font-size: 17px; color: #1e3d2f; display: flex; align-items: center; gap: 6px; font-weight: 600; }
+        
+        /* 📝 제목 밑에 은은하게 출력되는 가사 미리보기 스타일 */
+        #resultList li .lyrics-preview { font-size: 13px; color: #7f8c8d; font-weight: normal; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; margin-top: 3px; }
         
         .badge { display: inline-block; padding: 2px 6px; font-size: 11px; font-weight: bold; border-radius: 4px; color: white; }
         .badge.chanmi { background-color: #cca43b; } 
         .badge.mulsori { background-color: #2e5a44; } 
         .badge.custom { background-color: #7f8c8d; } 
         
-        /* 🎼 악보 및 가사 뷰어 영역 */
         #imageSection { display: none; padding: calc(15px + env(safe-area-inset-top)) 15px calc(25px + env(safe-area-inset-bottom)) 15px; width: 100%; background-color: #ffffff; }
         .back-btn { width: 100%; padding: 14px; font-size: 16px; background-color: #7f8c8d; color: white; border: none; border-radius: 8px; margin-bottom: 15px; cursor: pointer; font-weight: bold; }
         
         img { width: 100%; height: auto; display: block; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-radius: 6px; }
-        
-        /* 📝 실시간 로드된 가사를 정갈하게 보여주는 스타일 */
-        .lyrics-box { background-color: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #1e3d2f; font-size: 15px; color: #333; line-height: 1.8; white-space: pre-wrap; margin-top: 15px; word-break: break-all; }
-        .lyrics-title { font-size: 14px; color: #1e3d2f; font-weight: bold; margin-bottom: 8px; display: block; }
-        
         .empty-msg { padding: 100px 20px; color: #999; text-align: center; font-size: 15px; line-height: 1.6; }
     </style>
 </head>
@@ -55,7 +52,7 @@
         <div class="header">
             <h2>Praise Knock</h2>
             <div class="search-box">
-                <input type="text" id="searchInput" placeholder="찬양 제목 입력" onkeyup="if(event.keyCode==13) searchCCM()">
+                <input type="text" id="searchInput" placeholder="찬양 제목 또는 가사 입력" onkeyup="if(event.keyCode==13) searchCCM()">
                 <button class="search-btn" onclick="searchCCM()">검색</button>
             </div>
         </div>
@@ -67,16 +64,16 @@
     <div id="imageSection">
         <button class="back-btn" onclick="showList()">⬅️ 목록으로 돌아가기</button>
         <div id="imageCanvas"></div>
-        <div id="lyricsCanvas"></div>
     </div>
 </div>
 
 <script>
 let ccmData = []; 
-const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']; // 💡 스마트폰 최적화 순서로 재정렬
+const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp'];
 
 window.onload = function() {
-    fetch('ccm_data.json?v=5')
+    // 💡 최신 인덱스 동기화를 위해 v=103으로 빌드업
+    fetch('ccm_data.json?v=103')
         .then(response => response.json())
         .then(data => {
             ccmData = data.map(item => {
@@ -84,22 +81,26 @@ window.onload = function() {
                 let displayTitle = rawTitle;
                 let bookType = null; 
 
-                // 공백 유무에 상관없이 하이픈 기준으로 안전하게 쪼개기
                 if (rawTitle.includes("-")) {
                     const parts = rawTitle.split("-");
                     displayTitle = parts[0].trim();
                     bookType = parts[1].trim();
                 }
                 
+                // 미리보기 텍스트 정리 (최대 35자)
+                let previewText = item.lyrics ? item.lyrics.substring(0, 35).trim() + "..." : "";
+                
                 return {
                     ...item,
                     displayTitle: displayTitle,
                     book: bookType, 
-                    rawOriginalTitle: rawTitle 
+                    rawOriginalTitle: rawTitle,
+                    preview: previewText,
+                    searchLyrics: item.lyrics ? item.lyrics.toLowerCase() : ""
                 };
             });
             
-            document.getElementById('resultList').innerHTML = '<div class="empty-msg">💡 찬양 제목을 입력하여 검색해 보세요.</div>';
+            document.getElementById('resultList').innerHTML = '<div class="empty-msg">💡 찬양 제목이나 가사를 입력하여 검색해 보세요.</div>';
         })
         .catch(err => {
             document.getElementById('resultList').innerHTML = '<div class="empty-msg">❌ 데이터를 불러오지 못했습니다.</div>';
@@ -114,8 +115,10 @@ function searchCCM() {
     
     if (!input) return;
 
+    // 💡 [초강력 복구] 제목 뿐만 아니라 가사 내용(searchLyrics)에 단어가 포함되어도 필터링에 걸려 나옵니다!
     const filtered = ccmData.filter(ccm => 
-        ccm.displayTitle.toLowerCase().includes(input)
+        ccm.displayTitle.toLowerCase().includes(input) || 
+        ccm.searchLyrics.includes(input)
     );
 
     if (filtered.length === 0) {
@@ -134,43 +137,40 @@ function searchCCM() {
             badgeHtml = ` <span class="${badgeClass}">${ccm.book}</span>`;
         }
         
-        li.innerHTML = `<strong>${ccm.displayTitle}${badgeHtml}</strong>`;
-        li.onclick = () => loadSheetAndLyrics(ccm.displayTitle, ccm.book, ccm.id, ccm.rawOriginalTitle); 
+        let previewHtml = ccm.preview ? `<span class="lyrics-preview">${ccm.preview}</span>` : '';
+        
+        li.innerHTML = `
+            <div class="title-row"><strong>${ccm.displayTitle}</strong>${badgeHtml}</div>
+            ${previewHtml}
+        `;
+        li.onclick = () => loadSheetOnly(ccm.displayTitle, ccm.book, ccm.id, ccm.rawOriginalTitle); 
         resultList.appendChild(li);
     });
 }
 
-function loadSheetAndLyrics(title, book, id, rawOriginalTitle) {
+function loadSheetOnly(title, book, id, rawOriginalTitle) {
     const imageCanvas = document.getElementById('imageCanvas');
-    const lyricsCanvas = document.getElementById('lyricsCanvas');
-    
     imageCanvas.innerHTML = ''; 
-    lyricsCanvas.innerHTML = '<div class="lyrics-box" style="color:#aaa;">가사를 불러오는 중...</div>'; 
 
-    // --- [1] 🛠️ 악보 이미지 후보군 매칭 주소 전면 튜닝 ---
     let srcUrls = [];
     const padId = id ? String(id).padStart(4, '0') : "";
     const cleanT = title.replace(/\s+/g, "");
     const cleanBook = book ? book.replace(/\s+/g, "") : "";
 
     imageExtensions.forEach(ext => {
-        // 규칙 1: 공백 없는 완벽 밀착형 우선 매칭 (제목-출처.jpg)
         if (book) {
             srcUrls.push(`images/${title.trim()}-${book.trim()}${ext}`);
             srcUrls.push(`images/${cleanT}-${cleanBook}${ext}`);
             
-            // 옛날 찬미예수 예외 규격 대응
             if (book.includes('찬미예수2000') && padId) {
                 srcUrls.push(`images/${cleanT}_${padId}-찬미예수2000${ext}`);
                 srcUrls.push(`images/${title.trim()}_${padId}-찬미예수2000${ext}`);
             }
         }
-        // 규칙 2: 공백 유지형 및 날것 매칭
         srcUrls.push(`images/${rawOriginalTitle}${ext}`);
         srcUrls.push(`images/${title.trim()}${ext}`);
         srcUrls.push(`images/${cleanT}${ext}`);
         
-        // 규칙 3: (하위 호환용) 혹시 모를 옛날 공백 하이픈 공백 스타일도 보조 매칭
         if (book) {
             srcUrls.push(`images/${title.trim()} - ${book.trim()}${ext}`);
         }
@@ -194,26 +194,6 @@ function loadSheetAndLyrics(title, book, id, rawOriginalTitle) {
     img.onload = () => { imageCanvas.appendChild(img); };
     img.onerror = () => { tryLoadImage(); };
     tryLoadImage();
-
-    // --- [2] 가사 동적 로드 로직 ---
-    fetch(`lyrics/${rawOriginalTitle}.txt`)
-        .then(response => {
-            if (!response.ok) throw new Error('가사 파일 없음');
-            return response.text();
-        })
-        .then(text => {
-            lyricsCanvas.innerHTML = `
-                <div class="lyrics-box">
-                    <span class="lyrics-title">📝 가사 보기</span>
-                    ${text.trim()}
-                </div>`;
-        })
-        .catch(err => {
-            lyricsCanvas.innerHTML = `
-                <div class="lyrics-box" style="color:#bbb; border-left-color:#ccc;">
-                    등록된 가사 텍스트 파일이 없습니다.
-                </div>`;
-        });
 
     document.getElementById('searchView').style.display = 'none';
     document.getElementById('imageSection').style.display = 'block';
