@@ -2,119 +2,206 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Praise Knock - 동역자 업로드 Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Praise Knock</title>
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="newicon.png">
+    <link rel="icon" type="image/png" href="newicon.png">
+
     <style>
-        * { box-sizing: border-box; font-family: -apple-system, sans-serif; }
-        body { background-color: #f5f7f6; padding: 20px; margin: 0; display: flex; justify-content: center; }
-        .admin-box { width: 100%; max-width: 600px; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-top: 5px solid #1e3d2f; }
-        h2 { color: #1e3d2f; margin-top: 0; text-align: center; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; font-weight: bold; margin-bottom: 8px; color: #333; font-size: 14px; }
-        input[type="text"], textarea, input[type="file"] { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; outline: none; }
-        input[type="text"]:focus, textarea:focus { border-color: #1e3d2f; }
-        textarea { height: 180px; resize: vertical; line-height: 1.6; }
-        .hint { font-size: 12px; color: #666; margin-top: 4px; }
-        .btn-submit { width: 100%; padding: 15px; background-color: #1e3d2f; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
-        .btn-submit:hover { background-color: #2e5a44; }
-        .status-msg { margin-top: 15px; padding: 12px; border-radius: 6px; text-align: center; font-weight: bold; display: none; }
-        .success { background-color: #e8f5e9; color: #2e7d32; }
-        .error { background-color: #ffebee; color: #c62828; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow-x: hidden; background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        .container { width: 100%; min-height: 100vh; margin: 0; padding: 0; background-color: #fff; display: flex; flex-direction: column; }
+        @media (min-width: 601px) { .container { width: 600px; margin: 0 auto; box-shadow: 0 0 20px rgba(0,0,0,0.1); } }
+        
+        .header { width: 100%; padding: calc(20px + env(safe-area-inset-top)) 20px 16px 20px; background-color: #1e3d2f; color: white; position: sticky; top: 0; z-index: 100; border-bottom: 3px solid #d4af37; }
+        .header h2 { margin: 0 0 12px 0; font-weight: 600; font-size: 22px; text-align: center; letter-spacing: 0.5px; }
+        
+        .search-box { display: flex; gap: 8px; width: 100%; }
+        input { flex: 1; padding: 12px 16px; font-size: 16px; border: none; border-radius: 8px; outline: none; background-color: #fff; color: #333; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); }
+        .search-btn { padding: 0 20px; background-color: #2e5a44; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; transition: background 0.2s; }
+        .search-btn:hover { background-color: #3b7055; }
+        
+        #resultList { list-style: none; padding: 0; margin: 0; width: 100%; }
+        #resultList li { padding: 18px 20px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.2s; display: flex; flex-direction: column; gap: 4px; }
+        #resultList li:hover { background-color: #f9faf9; }
+        #resultList li .title-row { font-size: 17px; color: #1e3d2f; display: flex; align-items: center; gap: 6px; font-weight: 600; }
+        
+        /* 📝 제목 밑에 옅게 깔리는 가사 미리보기 스타일 */
+        #resultList li .lyrics-preview { font-size: 13px; color: #7f8c8d; font-weight: normal; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; margin-top: 2px; }
+        
+        .badge { display: inline-block; padding: 2px 6px; font-size: 11px; font-weight: bold; border-radius: 4px; color: white; }
+        .badge.chanmi { background-color: #cca43b; } 
+        .badge.mulsori { background-color: #2e5a44; } 
+        .badge.custom { background-color: #7f8c8d; } 
+        
+        /* 🎼 악보 뷰어 영역 패딩 최적화 */
+        #imageSection { display: none; padding: calc(15px + env(safe-area-inset-top)) 15px calc(25px + env(safe-area-inset-bottom)) 15px; width: 100%; background-color: #ffffff; }
+        .back-btn { width: 100%; padding: 14px; font-size: 16px; background-color: #7f8c8d; color: white; border: none; border-radius: 8px; margin-bottom: 15px; cursor: pointer; font-weight: bold; }
+        
+        img { width: 100%; height: auto; display: block; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-radius: 6px; }
+        .empty-msg { padding: 100px 20px; color: #999; text-align: center; font-size: 15px; line-height: 1.6; }
     </style>
 </head>
 <body>
 
-<div class="admin-box">
-    <h2>🎼 새 찬양 데이터 등록 (임시 계측)</h2>
-    
-    <div class="form-group">
-        <label for="titleInput">찬양 제목 (출처 규칙 필수)</label>
-        <input type="text" id="titleInput" placeholder="예: 원하고 바라고 기도합니다 - 마커스">
-        <div class="hint">⚠️ 동명이곡 방지를 위해 하이픈(-) 뒤에 꼭 출처(물소리, 찬미예수2000 등)를 적어주세요.</div>
+<div class="container">
+    <div id="searchView">
+        <div class="header">
+            <h2>Praise Knock</h2>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="찬양 제목 입력" onkeyup="if(event.keyCode==13) searchCCM()">
+                <button class="search-btn" onclick="searchCCM()">검색</button>
+            </div>
+        </div>
+        <ul id="resultList">
+            <div class="empty-msg">데이터를 불러오는 중입니다...</div>
+        </ul>
     </div>
 
-    <div class="form-group">
-        <label for="lyricsInput">가사 본문 입력</label>
-        <textarea id="lyricsInput" placeholder="찬양 가사를 단락에 맞춰 입력해 주세요."></textarea>
+    <div id="imageSection">
+        <button class="back-btn" onclick="showList()">⬅️ 목록으로 돌아가기</button>
+        <div id="imageCanvas"></div>
     </div>
-
-    <div class="form-group">
-        <label for="imageInput">악보 이미지 선택</label>
-        <input type="file" id="imageInput" accept="image/*">
-        <div class="hint">지원 확장자: jpg, png, gif 등 (서버에서 고효율 jpg로 자동 전환 예정)</div>
-    </div>
-
-    <button class="btn-submit" onclick="uploadToStaging()">검수 대기실로 등록하기 🚀</button>
-    <div id="statusMsg" class="status-msg"></div>
 </div>
 
 <script>
-// =================================================================
-// 🔐 [교체 완료] 고정 로그인 및 토큰 쪼개기 영역
-// =================================================================
-const ADMIN_ID = "dsmusic";     // 👈 동역자 로그인 아이디
-const ADMIN_PW = "7557";       // 👈 동역자 로그인 비밀번호
+let ccmData = []; 
+const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp'];
 
-// 💡 진짜 ghp_... 토큰 값 수십 자리를 3개로 적당히 쪼개서 나눠 적으세요!
-const t1 = "ghp_nWvvg5mVItS"; 
-const t2 = "4jMUx0RRvH99p"; 
-const t3 = "1FLp1P370iJG"; 
-const REAL_TOKEN = t1 + t2 + t3;
+window.onload = function() {
+    // 💡 강력한 브라우저 캐시를 깨부수기 위해 v=102 조치 완료
+    fetch('ccm_data.json?v=102')
+        .then(response => response.json())
+        .then(data => {
+            ccmData = data.map(item => {
+                let rawTitle = (item.title || "").trim();
+                let displayTitle = rawTitle;
+                let bookType = null; 
 
-const REPO_OWNER = "victae"; 
-const REPO_NAME = "praises"; 
-// =================================================================
-
-// 웹페이지가 켜지자마자 실행되는 가상 로그인 로직
-let GITHUB_TOKEN = "";
-if (!sessionStorage.getItem('praise_logged_in')) {
-    const inputId = prompt("👤 업로드 시스템 로그인 아이디:");
-    const inputPw = prompt("🔒 업로드 시스템 로그인 비밀번호:");
-    
-    if (inputId === ADMIN_ID && inputPw === ADMIN_PW) {
-        sessionStorage.setItem('praise_logged_in', 'true');
-        GITHUB_TOKEN = REAL_TOKEN;
-    } else {
-        alert("❌ 로그인 정보가 올바르지 않습니다.");
-        document.body.innerHTML = "<h2 style='text-align:center; margin-top:50px; color:red;'>접근 권한이 없습니다.</h2>";
-    }
-} else {
-    GITHUB_TOKEN = REAL_TOKEN;
+                if (rawTitle.includes("-")) {
+                    const parts = rawTitle.split("-");
+                    displayTitle = parts[0].trim();
+                    bookType = parts[1].trim();
+                }
+                
+                return {
+                    ...item,
+                    displayTitle: displayTitle,
+                    book: bookType, 
+                    rawOriginalTitle: rawTitle,
+                    // 💡 json 내부에 lyrics 텍스트 데이터가 있다면 가공해서 들고 있습니다.
+                    preview: item.lyrics ? item.lyrics.substring(0, 40) + "..." : ""
+                };
+            });
+            
+            document.getElementById('resultList').innerHTML = '<div class="empty-msg">💡 찬양 제목을 입력하여 검색해 보세요.</div>';
+        })
+        .catch(err => {
+            document.getElementById('resultList').innerHTML = '<div class="empty-msg">❌ 데이터를 불러오지 못했습니다.</div>';
+            console.error(err);
+        });
 }
 
-async function uploadToStaging() {
-    const title = document.getElementById('titleInput').value.trim();
-    const lyrics = document.getElementById('lyricsInput').value.trim();
-    const imageFile = document.getElementById('imageInput').files[0];
+function searchCCM() {
+    const input = document.getElementById('searchInput').value.trim().toLowerCase();
+    const resultList = document.getElementById('resultList');
+    resultList.innerHTML = ''; 
+    
+    if (!input) return;
 
-    if (!title || !lyrics || !imageFile) {
-        showStatus("모든 항목(제목, 가사, 이미지)을 입력해야 합니다.", "error");
+    const filtered = ccmData.filter(ccm => 
+        ccm.displayTitle.toLowerCase().includes(input)
+    );
+
+    if (filtered.length === 0) {
+        resultList.innerHTML = '<div class="empty-msg">검색 결과가 없습니다.</div>';
         return;
     }
 
-    showStatus("깃허브 대기실에 등록하는 중입니다... 잠시만 기다려주세요.", "success");
-
-    try {
-        // 1. 가사 텍스트 파일 생성
-        const lyricsContentBase64 = btoa(unescape(encodeURIComponent(lyrics)));
-        const lyricsUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/admin_lyrics/${title}.txt`;
+    filtered.forEach(ccm => {
+        const li = document.createElement('li');
         
-        await fetch(lyricsUrl, {
-            method: 'PUT',
-            headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: `📝 동역자 등록: ${title} 가사 임시 저장`, content: lyricsContentBase64 })
-        });
+        let badgeHtml = '';
+        if (ccm.book) {
+            let badgeClass = 'badge custom';
+            if (ccm.book.includes('찬미예수2000')) badgeClass = 'badge chanmi';
+            else if (ccm.book.includes('물소리')) badgeClass = 'badge mulsori';
+            badgeHtml = ` <span class="${badgeClass}">${ccm.book}</span>`;
+        }
+        
+        // 💡 [수정] 가사 미리보기 구역(.lyrics-preview)을 다시 깔끔하게 출력합니다.
+        let previewHtml = ccm.preview ? `<span class="lyrics-preview">${ccm.preview}</span>` : '';
+        
+        li.innerHTML = `
+            <div class="title-row">${ccm.displayTitle}${badgeHtml}</div>
+            ${previewHtml}
+        `;
+        li.onclick = () => loadSheetOnly(ccm.displayTitle, ccm.book, ccm.id, ccm.rawOriginalTitle); 
+        resultList.appendChild(li);
+    });
+}
 
-        // 2. 이미지 파일 변환 및 생성
-        const fileExt = imageFile.name.split('.').pop();
-        const reader = new FileReader();
-        reader.readAsDataURL(imageFile);
-        reader.onload = async function () {
-            const imageBase64 = reader.result.split(',')[1];
-            const imageUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/admin_images/${title}.${fileExt}`;
+// 💡 악보를 띄울 때는 하단의 지저분한 가사 에러창 없이 오직 깨끗한 악보 이미지만 서빙합니다.
+function loadSheetOnly(title, book, id, rawOriginalTitle) {
+    const imageCanvas = document.getElementById('imageCanvas');
+    imageCanvas.innerHTML = ''; 
+
+    let srcUrls = [];
+    const padId = id ? String(id).padStart(4, '0') : "";
+    const cleanT = title.replace(/\s+/g, "");
+    const cleanBook = book ? book.replace(/\s+/g, "") : "";
+
+    imageExtensions.forEach(ext => {
+        if (book) {
+            srcUrls.push(`images/${title.trim()}-${book.trim()}${ext}`);
+            srcUrls.push(`images/${cleanT}-${cleanBook}${ext}`);
             
-            const imgRes = await fetch(imageUrl, {
-                method: 'PUT',
-                headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: `🖼️ 동역자 등록: ${title} 악보 임시 저장`, content: imageBase64 })
-            });
+            if (book.includes('찬미예수2000') && padId) {
+                srcUrls.push(`images/${cleanT}_${padId}-찬미예수2000${ext}`);
+                srcUrls.push(`images/${title.trim()}_${padId}-찬미예수2000${ext}`);
+            }
+        }
+        srcUrls.push(`images/${rawOriginalTitle}${ext}`);
+        srcUrls.push(`images/${title.trim()}${ext}`);
+        srcUrls.push(`images/${cleanT}${ext}`);
+        
+        if (book) {
+            srcUrls.push(`images/${title.trim()} - ${book.trim()}${ext}`);
+        }
+    });
+
+    const img = document.createElement('img');
+    let currentAttemptIndex = 0;
+
+    function tryLoadImage() {
+        if (currentAttemptIndex >= srcUrls.length) {
+            imageCanvas.innerHTML = `
+                <div class="empty-msg" style="padding:40px 20px;">
+                    <strong>'${title}'</strong> 악보 이미지를 찾을 수 없습니다.<br>
+                    <small style="color:#aaa; display:block; margin-top:8px;">(그룹: ${book || '없음'})</small>
+                </div>`;
+            return;
+        }
+        img.src = srcUrls[currentAttemptIndex];
+        currentAttemptIndex++;
+    }
+    img.onload = () => { imageCanvas.appendChild(img); };
+    img.onerror = () => { tryLoadImage(); };
+    tryLoadImage();
+
+    document.getElementById('searchView').style.display = 'none';
+    document.getElementById('imageSection').style.display = 'block';
+    window.scrollTo(0, 0); 
+}
+
+function showList() {
+    document.getElementById('imageSection').style.display = 'none';
+    document.getElementById('searchView').style.display = 'block';
+}
+</script>
+</body>
+</html>
