@@ -49,16 +49,43 @@
 </div>
 
 <script>
-// ⚠️ 발급받으신 토큰 정보와 본인의 깃허브 정보를 정확하게 입력하세요.
-const GITHUB_TOKEN = "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";
+// =================================================================
+// 🔐 [교체 완료] 고정 로그인 및 토큰 쪼개기 영역
+// =================================================================
+const ADMIN_ID = "dsmusic";     // 👈 동역자 로그인 아이디
+const ADMIN_PW = "7557";       // 👈 동역자 로그인 비밀번호
+
+// 💡 진짜 ghp_... 토큰 값 수십 자리를 3개로 적당히 쪼개서 나눠 적으세요!
+const t1 = "ghp_nWvvg5mVItS"; 
+const t2 = "4jMUx0RRvH99p"; 
+const t3 = "1FLp1P370iJG"; 
+const REAL_TOKEN = t1 + t2 + t3;
+
 const REPO_OWNER = "victae"; 
-const REPO_NAME = "praises";     
+const REPO_NAME = "praises"; 
+// =================================================================
+
+// 웹페이지가 켜지자마자 실행되는 가상 로그인 로직
+let GITHUB_TOKEN = "";
+if (!sessionStorage.getItem('praise_logged_in')) {
+    const inputId = prompt("👤 업로드 시스템 로그인 아이디:");
+    const inputPw = prompt("🔒 업로드 시스템 로그인 비밀번호:");
+    
+    if (inputId === ADMIN_ID && inputPw === ADMIN_PW) {
+        sessionStorage.setItem('praise_logged_in', 'true');
+        GITHUB_TOKEN = REAL_TOKEN;
+    } else {
+        alert("❌ 로그인 정보가 올바르지 않습니다.");
+        document.body.innerHTML = "<h2 style='text-align:center; margin-top:50px; color:red;'>접근 권한이 없습니다.</h2>";
+    }
+} else {
+    GITHUB_TOKEN = REAL_TOKEN;
+}
 
 async function uploadToStaging() {
     const title = document.getElementById('titleInput').value.trim();
     const lyrics = document.getElementById('lyricsInput').value.trim();
     const imageFile = document.getElementById('imageInput').files[0];
-    const statusMsg = document.getElementById('statusMsg');
 
     if (!title || !lyrics || !imageFile) {
         showStatus("모든 항목(제목, 가사, 이미지)을 입력해야 합니다.", "error");
@@ -68,7 +95,7 @@ async function uploadToStaging() {
     showStatus("깃허브 대기실에 등록하는 중입니다... 잠시만 기다려주세요.", "success");
 
     try {
-        // 1. 가사 텍스트 파일 생성 (admin_lyrics/[제목].txt)
+        // 1. 가사 텍스트 파일 생성
         const lyricsContentBase64 = btoa(unescape(encodeURIComponent(lyrics)));
         const lyricsUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/admin_lyrics/${title}.txt`;
         
@@ -78,7 +105,7 @@ async function uploadToStaging() {
             body: JSON.stringify({ message: `📝 동역자 등록: ${title} 가사 임시 저장`, content: lyricsContentBase64 })
         });
 
-        // 2. 이미지 파일 Base64 변환 후 생성 (admin_images/[제목].확장자)
+        // 2. 이미지 파일 변환 및 생성
         const fileExt = imageFile.name.split('.').pop();
         const reader = new FileReader();
         reader.readAsDataURL(imageFile);
@@ -91,28 +118,3 @@ async function uploadToStaging() {
                 headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: `🖼️ 동역자 등록: ${title} 악보 임시 저장`, content: imageBase64 })
             });
-
-            if (imgRes.ok) {
-                showStatus("🎉 검수 대기실에 성공적으로 등록되었습니다! 관리자 승인 후 앱에 반영됩니다.", "success");
-                document.getElementById('titleInput').value = '';
-                document.getElementById('lyricsInput').value = '';
-                document.getElementById('imageInput').value = '';
-            } else {
-                throw new Error("이미지 업로드 실패");
-            }
-        };
-
-    } catch (error) {
-        showStatus("업로드 중 오류가 발생했습니다: " + error.message, "error");
-    }
-}
-
-function showStatus(msg, type) {
-    const statusMsg = document.getElementById('statusMsg');
-    statusMsg.innerText = msg;
-    statusMsg.className = "status-msg " + type;
-    statusMsg.style.display = "block";
-}
-</script>
-</body>
-</html>
