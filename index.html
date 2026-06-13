@@ -17,7 +17,6 @@
         .container { width: 100%; min-height: 100vh; margin: 0; padding: 0; background-color: #fff; display: flex; flex-direction: column; }
         @media (min-width: 601px) { .container { width: 600px; margin: 0 auto; box-shadow: 0 0 20px rgba(0,0,0,0.1); } }
         
-        /* 🌿 헤더: 세련된 포레스트 그린 & 소프트 골드 하단 라인 */
         .header { width: 100%; padding: calc(20px + env(safe-area-inset-top)) 20px 16px 20px; background-color: #1e3d2f; color: white; position: sticky; top: 0; z-index: 100; border-bottom: 3px solid #d4af37; }
         .header h2 { margin: 0 0 12px 0; font-weight: 600; font-size: 22px; text-align: center; letter-spacing: 0.5px; }
         
@@ -32,12 +31,10 @@
         #resultList li strong { font-size: 17px; color: #1e3d2f; display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-weight: 600; }
         #resultList li span { font-size: 14px; color: #666; display: block; line-height: 1.5; }
         
-        /* 🏷️ 출처 표시를 위한 UI 뱃지 스타일 */
         .badge { display: inline-block; padding: 2px 6px; font-size: 11px; font-weight: bold; border-radius: 4px; color: white; }
-        .badge.chanmi { background-color: #cca43b; } /* 찬미예수 골드 */
-        .badge.mulsori { background-color: #2e5a44; } /* 물소리 그린 */
+        .badge.chanmi { background-color: #cca43b; } 
+        .badge.mulsori { background-color: #2e5a44; } 
         
-        /* 🎼 악보 뷰어 영역 */
         #imageSection { display: none; padding: calc(15px + env(safe-area-inset-top)) 15px calc(25px + env(safe-area-inset-bottom)) 15px; width: 100%; background-color: #ffffff; }
         .back-btn { width: 100%; padding: 14px; font-size: 16px; background-color: #7f8c8d; color: white; border: none; border-radius: 8px; margin-bottom: 15px; cursor: pointer; font-weight: bold; }
         
@@ -69,24 +66,30 @@
 
 <script>
 let ccmData = []; 
-
 const imageExtensions = ['.gif', '.bmp', '.jpg', '.jpeg', '.png'];
 
 window.onload = function() {
-    fetch('ccm_data.json?v=1')
+    // 💡 ?v= 뒤의 숫자를 바꾸면 브라우저가 강제로 최신 json 데이터를 로드합니다.
+    fetch('ccm_data.json?v=2')
         .then(response => response.json())
         .then(data => {
             ccmData = data.map(item => {
                 let currentTitle = item.title || "";
-                let bookType = "물소리"; 
+                let bookType = "물소리"; // 기본값
                 
-                // 💡 JSON 데이터 내부 제목에 들어있을 수 있는 다양한 공백 형태를 제거하고 태깅합니다.
+                // 데이터 제목 분석 및 출처 태깅 유연화
                 if (currentTitle.includes("찬미예수2000")) {
                     bookType = "찬미예수2000";
                     currentTitle = currentTitle.replace(/\s*-\s*찬미예수2000/, "");
                 } else if (currentTitle.includes("물소리")) {
                     bookType = "물소리";
                     currentTitle = currentTitle.replace(/\s*-\s*물소리/, "");
+                } else {
+                    // 💡 [핵심 추가] 제목에 출처 명시가 없더라도, 원래 웹사이트 일련번호(1~2062)를 
+                    // 기반으로 파이썬 크롤링을 진행했었으므로 id가 매칭된다면 무조건 찬미예수로 강제 분류합니다.
+                    if (item.id && Number(item.id) <= 2062) {
+                        bookType = "찬미예수2000";
+                    }
                 }
                 
                 return {
@@ -126,7 +129,6 @@ function searchCCM() {
 
     filtered.forEach(ccm => {
         const li = document.createElement('li');
-        
         const badgeClass = ccm.book === '찬미예수2000' ? 'badge chanmi' : 'badge mulsori';
         const titleText = `<strong>${ccm.displayTitle} <span class="${badgeClass}">${ccm.book}</span></strong>`;
         
@@ -148,25 +150,20 @@ function searchCCM() {
     });
 }
 
-// 💡 핵심 수정 영역: 파일 이름 매칭 시 모든 공백(\s)을 완전히 압축하여 정밀 조준합니다.
 function showImage(title, book, id) {
     const canvas = document.getElementById('imageCanvas');
     canvas.innerHTML = ''; 
 
     let srcUrls = [];
     const padId = id ? String(id).padStart(4, '0') : "";
-    
-    // 제목에서 공백을 완전히 없앤 버전도 준비 (예: "나를 사랑하는 자들이" -> "나를사랑하는자들이")
     const cleanT = title.replace(/\s+/g, "");
 
     imageExtensions.forEach(ext => {
         if (book === '찬미예수2000') {
-            // 1) 공백 없는 충돌 회피형 패턴 (가라_1483-찬미예수2000.bmp)
             if (padId) {
                 srcUrls.push(`images/${cleanT}_${padId}-찬미예수2000${ext}`);
-                srcUrls.push(`images/${title.trim()}_${padId} - 찬미예수2000${ext}`); // 기존 포맷도 백업용 유지
+                srcUrls.push(`images/${title.trim()}_${padId} - 찬미예수2000${ext}`); 
             }
-            // 2) 공백이 완전히 통제된 찬미예수 패턴들
             srcUrls.push(`images/${cleanT}-찬미예수2000${ext}`);
             srcUrls.push(`images/${title.trim()} - 찬미예수2000${ext}`);
             if (padId) {
@@ -174,7 +171,6 @@ function showImage(title, book, id) {
                 srcUrls.push(`images/${padId}${title.trim()}${ext}`);
             }
         } else {
-            // 3) 물소리 패턴들 (공백 압축 버전 최우선 대입)
             srcUrls.push(`images/${cleanT}-물소리${ext}`);
             srcUrls.push(`images/${title.trim()}-물소리${ext}`);
             srcUrls.push(`images/${title.trim()} - 물소리${ext}`);
@@ -192,9 +188,6 @@ function showImage(title, book, id) {
                     <strong>'${title}'</strong> 악보 이미지를 찾을 수 없습니다.<br>
                     <small style="color:#aaa; display:block; margin-top:8px;">
                         (출처: ${book} / 번호: ${padId || '없음'})
-                    </small>
-                    <small style="color:#bbb; font-size:12px; display:block; margin-top:4px;">
-                        images/ 폴더 내 실제 악보 파일명과 매칭이 실패했습니다. 
                     </small>
                 </div>`;
             return;
@@ -216,6 +209,11 @@ function showImage(title, book, id) {
     document.getElementById('searchView').style.display = 'none';
     document.getElementById('imageSection').style.display = 'block';
     window.scrollTo(0, 0); 
+}
+
+function showList() {
+    document.getElementById('imageSection').style.display = 'none';
+    document.getElementById('searchView').style.display = 'block';
 }
 </script>
 </body>
