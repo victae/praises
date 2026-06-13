@@ -76,7 +76,7 @@ let ccmData = [];
 const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']; // 💡 스마트폰 최적화 순서로 재정렬
 
 window.onload = function() {
-    fetch('ccm_data.json?v=6')
+    fetch('ccm_data.json?v=5')
         .then(response => response.json())
         .then(data => {
             ccmData = data.map(item => {
@@ -165,4 +165,65 @@ function loadSheetAndLyrics(title, book, id, rawOriginalTitle) {
                 srcUrls.push(`images/${title.trim()}_${padId}-찬미예수2000${ext}`);
             }
         }
-        // 규칙 2: 공백 유지형 및 날
+        // 규칙 2: 공백 유지형 및 날것 매칭
+        srcUrls.push(`images/${rawOriginalTitle}${ext}`);
+        srcUrls.push(`images/${title.trim()}${ext}`);
+        srcUrls.push(`images/${cleanT}${ext}`);
+        
+        // 규칙 3: (하위 호환용) 혹시 모를 옛날 공백 하이픈 공백 스타일도 보조 매칭
+        if (book) {
+            srcUrls.push(`images/${title.trim()} - ${book.trim()}${ext}`);
+        }
+    });
+
+    const img = document.createElement('img');
+    let currentAttemptIndex = 0;
+
+    function tryLoadImage() {
+        if (currentAttemptIndex >= srcUrls.length) {
+            imageCanvas.innerHTML = `
+                <div class="empty-msg" style="padding:40px 20px;">
+                    <strong>'${title}'</strong> 악보 이미지를 찾을 수 없습니다.<br>
+                    <small style="color:#aaa; display:block; margin-top:8px;">(그룹: ${book || '없음'})</small>
+                </div>`;
+            return;
+        }
+        img.src = srcUrls[currentAttemptIndex];
+        currentAttemptIndex++;
+    }
+    img.onload = () => { imageCanvas.appendChild(img); };
+    img.onerror = () => { tryLoadImage(); };
+    tryLoadImage();
+
+    // --- [2] 가사 동적 로드 로직 ---
+    fetch(`lyrics/${rawOriginalTitle}.txt`)
+        .then(response => {
+            if (!response.ok) throw new Error('가사 파일 없음');
+            return response.text();
+        })
+        .then(text => {
+            lyricsCanvas.innerHTML = `
+                <div class="lyrics-box">
+                    <span class="lyrics-title">📝 가사 보기</span>
+                    ${text.trim()}
+                </div>`;
+        })
+        .catch(err => {
+            lyricsCanvas.innerHTML = `
+                <div class="lyrics-box" style="color:#bbb; border-left-color:#ccc;">
+                    등록된 가사 텍스트 파일이 없습니다.
+                </div>`;
+        });
+
+    document.getElementById('searchView').style.display = 'none';
+    document.getElementById('imageSection').style.display = 'block';
+    window.scrollTo(0, 0); 
+}
+
+function showList() {
+    document.getElementById('imageSection').style.display = 'none';
+    document.getElementById('searchView').style.display = 'block';
+}
+</script>
+</body>
+</html>
