@@ -73,10 +73,9 @@
 
 <script>
 let ccmData = []; 
-const imageExtensions = ['.gif', '.bmp', '.jpg', '.jpeg', '.png'];
+const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']; // 💡 스마트폰 최적화 순서로 재정렬
 
 window.onload = function() {
-    // 구조가 완전히 바뀌었으므로 최신 데이터 강제 로드 (v=5)
     fetch('ccm_data.json?v=5')
         .then(response => response.json())
         .then(data => {
@@ -85,6 +84,7 @@ window.onload = function() {
                 let displayTitle = rawTitle;
                 let bookType = null; 
 
+                // 공백 유무에 상관없이 하이픈 기준으로 안전하게 쪼개기
                 if (rawTitle.includes("-")) {
                     const parts = rawTitle.split("-");
                     displayTitle = parts[0].trim();
@@ -114,7 +114,6 @@ function searchCCM() {
     
     if (!input) return;
 
-    // 💡 초고속 제목 매칭 (Exact Match 기준 안전 필터링)
     const filtered = ccmData.filter(ccm => 
         ccm.displayTitle.toLowerCase().includes(input)
     );
@@ -136,13 +135,11 @@ function searchCCM() {
         }
         
         li.innerHTML = `<strong>${ccm.displayTitle}${badgeHtml}</strong>`;
-        // 클릭 시 악보뿐만 아니라 가사 파일명 매칭을 위해 원본 파일 정보도 함께 넘김
         li.onclick = () => loadSheetAndLyrics(ccm.displayTitle, ccm.book, ccm.id, ccm.rawOriginalTitle); 
         resultList.appendChild(li);
     });
 }
 
-// 💡 악보 로딩과 가사 비동기 로딩을 동시에 수행하는 핵심 함수
 function loadSheetAndLyrics(title, book, id, rawOriginalTitle) {
     const imageCanvas = document.getElementById('imageCanvas');
     const lyricsCanvas = document.getElementById('lyricsCanvas');
@@ -150,78 +147,22 @@ function loadSheetAndLyrics(title, book, id, rawOriginalTitle) {
     imageCanvas.innerHTML = ''; 
     lyricsCanvas.innerHTML = '<div class="lyrics-box" style="color:#aaa;">가사를 불러오는 중...</div>'; 
 
-    // --- [1] 악보 이미지 매칭 로직 ---
+    // --- [1] 🛠️ 악보 이미지 후보군 매칭 주소 전면 튜닝 ---
     let srcUrls = [];
     const padId = id ? String(id).padStart(4, '0') : "";
     const cleanT = title.replace(/\s+/g, "");
-    const cleanRaw = rawOriginalTitle.replace(/\s+/g, "");
+    const cleanBook = book ? book.replace(/\s+/g, "") : "";
 
     imageExtensions.forEach(ext => {
-        srcUrls.push(`images/${rawOriginalTitle}${ext}`);
-        srcUrls.push(`images/${cleanRaw}${ext}`);
+        // 규칙 1: 공백 없는 완벽 밀착형 우선 매칭 (제목-출처.jpg)
         if (book) {
-            srcUrls.push(`images/${title.trim()} - ${book}${ext}`);
-            srcUrls.push(`images/${cleanT}-${book.replace(/\s+/g, "")}${ext}`);
+            srcUrls.push(`images/${title.trim()}-${book.trim()}${ext}`);
+            srcUrls.push(`images/${cleanT}-${cleanBook}${ext}`);
+            
+            // 옛날 찬미예수 예외 규격 대응
             if (book.includes('찬미예수2000') && padId) {
                 srcUrls.push(`images/${cleanT}_${padId}-찬미예수2000${ext}`);
-                srcUrls.push(`images/${title.trim()}_${padId} - 찬미예수2000${ext}`);
+                srcUrls.push(`images/${title.trim()}_${padId}-찬미예수2000${ext}`);
             }
         }
-        srcUrls.push(`images/${title.trim()}${ext}`);
-        srcUrls.push(`images/${cleanT}${ext}`);
-    });
-
-    const img = document.createElement('img');
-    let currentAttemptIndex = 0;
-
-    function tryLoadImage() {
-        if (currentAttemptIndex >= srcUrls.length) {
-            imageCanvas.innerHTML = `
-                <div class="empty-msg" style="padding:40px 20px;">
-                    <strong>'${title}'</strong> 악보 이미지를 찾을 수 없습니다.<br>
-                    <small style="color:#aaa; display:block; margin-top:8px;">(그룹: ${book || '없음'})</small>
-                </div>`;
-            return;
-        }
-        img.src = srcUrls[currentAttemptIndex];
-        currentAttemptIndex++;
-    }
-    img.onload = () => { imageCanvas.appendChild(img); };
-    img.onerror = () => { tryLoadImage(); };
-    tryLoadImage();
-
-    // --- [2] 💡 가사 실시간 동적 로드 로직 (대책 A의 핵심) ---
-    // 깃허브 lyrics 폴더 안의 실제 텍스트 파일 주소를 찌릅니다.
-    fetch(`lyrics/${rawOriginalTitle}.txt`)
-        .then(response => {
-            if (!response.ok) throw new Error('가사 파일 없음');
-            return response.text();
-        })
-        .then(text => {
-            // 정갈하게 포맷팅하여 가사 주입
-            lyricsCanvas.innerHTML = `
-                <div class="lyrics-box">
-                    <span class="lyrics-title">📝 가사 보기</span>
-                    ${text.trim()}
-                </div>`;
-        })
-        .catch(err => {
-            lyricsCanvas.innerHTML = `
-                <div class="lyrics-box" style="color:#bbb; border-left-color:#ccc;">
-                    등록된 가사 텍스트 파일이 없습니다.
-                </div>`;
-        });
-
-    // 화면 전환
-    document.getElementById('searchView').style.display = 'none';
-    document.getElementById('imageSection').style.display = 'block';
-    window.scrollTo(0, 0); 
-}
-
-function showList() {
-    document.getElementById('imageSection').style.display = 'none';
-    document.getElementById('searchView').style.display = 'block';
-}
-</script>
-</body>
-</html>
+        // 규칙 2: 공백 유지형 및 날
