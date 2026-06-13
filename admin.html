@@ -3,143 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>복음성가 보관함 - 관리자 페이지</title>
+    <title>Praise Knock - 동역자 업로드 Admin</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background: #f5f6fa; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
-        label { font-weight: bold; margin-bottom: 5px; color: #333; }
-        input[type="text"], textarea, input[type="file"] { padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
-        textarea { height: 150px; resize: vertical; }
-        button { padding: 12px; background: #2c3e50; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; font-weight: bold; }
-        button:hover { background: #34495e; }
-        .status { margin-top: 10px; font-weight: bold; text-align: center; color: #e74c3c; }
+        * { box-sizing: border-box; font-family: -apple-system, sans-serif; }
+        body { background-color: #f5f7f6; padding: 20px; margin: 0; display: flex; justify-content: center; }
+        .admin-box { width: 100%; max-width: 600px; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-top: 5px solid #1e3d2f; }
+        h2 { color: #1e3d2f; margin-top: 0; text-align: center; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; color: #333; font-size: 14px; }
+        input[type="text"], textarea, input[type="file"] { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; outline: none; }
+        input[type="text"]:focus, textarea:focus { border-color: #1e3d2f; }
+        textarea { height: 180px; resize: vertical; line-height: 1.6; }
+        .hint { font-size: 12px; color: #666; margin-top: 4px; }
+        .btn-submit { width: 100%; padding: 15px; background-color: #1e3d2f; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+        .btn-submit:hover { background-color: #2e5a44; }
+        .status-msg { margin-top: 15px; padding: 12px; border-radius: 6px; text-align: center; font-weight: bold; display: none; }
+        .success { background-color: #e8f5e9; color: #2e7d32; }
+        .error { background-color: #ffebee; color: #c62828; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2>🔑 관리자 인증</h2>
+<div class="admin-box">
+    <h2>🎼 새 찬양 데이터 등록 (임시 계측)</h2>
+    
     <div class="form-group">
-        <label for="ghToken">GitHub Personal Access Token (PAT)</label>
-        <input type="password" id="ghToken" placeholder="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" onchange="saveToken()">
-        <small style="color:#7f8c8d; margin-top:5px;">토큰은 브라우저에만 임시 저장되며 외부에 노출되지 않습니다.</small>
+        <label for="titleInput">찬양 제목 (출처 규칙 필수)</label>
+        <input type="text" id="titleInput" placeholder="예: 원하고 바라고 기도합니다 - 마커스">
+        <div class="hint">⚠️ 동명이곡 방지를 위해 하이픈(-) 뒤에 꼭 출처(물소리, 찬미예수2000 등)를 적어주세요.</div>
     </div>
-</div>
 
-<div class="card">
-    <h2>🎵 찬양 자료 추가</h2>
     <div class="form-group">
-        <label for="title">찬양 제목 (파일명으로 사용됨)</label>
-        <input type="text" id="title" placeholder="예: 아 하나님의 은혜로">
+        <label for="lyricsInput">가사 본문 입력</label>
+        <textarea id="lyricsInput" placeholder="찬양 가사를 단락에 맞춰 입력해 주세요."></textarea>
     </div>
+
     <div class="form-group">
-        <label for="info">곡 정보 (첫 줄에 저장됨)</label>
-        <input type="text" id="info" placeholder="예: 두란노 찬양 예수 1집">
+        <label for="imageInput">악보 이미지 선택</label>
+        <input type="file" id="imageInput" accept="image/*">
+        <div class="hint">지원 확장자: jpg, png, gif 등 (서버에서 고효율 jpg로 자동 전환 예정)</div>
     </div>
-    <div class="form-group">
-        <label for="lyrics">가사 내용</label>
-        <textarea id="lyrics" placeholder="여기에 가사를 입력하세요..."></textarea>
-    </div>
-    <div class="form-group">
-        <label for="imageFile">악보 이미지 (.jpg)</label>
-        <input type="file" id="imageFile" accept=".jpg, .jpeg">
-    </div>
-    <button onclick="uploadToGithub()">GitHub에 업로드 및 반영하기</button>
-    <div id="statusMessage" class="status"></div>
+
+    <button class="btn-submit" onclick="uploadToStaging()">검수 대기실로 등록하기 🚀</button>
+    <div id="statusMsg" class="status-msg"></div>
 </div>
 
 <script>
-// 보안을 위해 입력한 토큰은 세션 스토리지에만 보관 (새로고침하면 날아감 혹은 유지 선택 가능)
-function saveToken() {
-    sessionStorage.setItem('gh_token', document.getElementById('ghToken').value.trim());
-}
+// ⚠️ 발급받으신 토큰 정보와 본인의 깃허브 정보를 정확하게 입력하세요.
+const GITHUB_TOKEN = "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";
+const REPO_OWNER = "victae"; 
+const REPO_NAME = "praises";     
 
-window.onload = function() {
-    if(sessionStorage.getItem('gh_token')) {
-        document.getElementById('ghToken').value = sessionStorage.getItem('gh_token');
+async function uploadToStaging() {
+    const title = document.getElementById('titleInput').value.trim();
+    const lyrics = document.getElementById('lyricsInput').value.trim();
+    const imageFile = document.getElementById('imageInput').files[0];
+    const statusMsg = document.getElementById('statusMsg');
+
+    if (!title || !lyrics || !imageFile) {
+        showStatus("모든 항목(제목, 가사, 이미지)을 입력해야 합니다.", "error");
+        return;
     }
-}
 
-async function uploadToGithub() {
-    const token = sessionStorage.getItem('gh_token');
-    const title = document.getElementById('title').value.trim();
-    const info = document.getElementById('info').value.trim();
-    const lyrics = document.getElementById('lyrics').value.trim();
-    const imageFile = document.getElementById('imageFile').files[0];
-    const statusDiv = document.getElementById('statusMessage');
-
-    if (!token) return alert('GitHub 토큰을 입력해주세요.');
-    if (!title) return alert('제목을 입력해주세요.');
-
-    // 깃헙 정보 세팅 (본인 계정 정보에 맞게 자동 매칭)
-    const OWNER = "victae"; 
-    const REPO = "praises"; 
-
-    statusDiv.style.color = "#2980b9";
-    statusDiv.innerText = "업로드 중... 잠시만 기다려주세요.";
+    showStatus("깃허브 대기실에 등록하는 중입니다... 잠시만 기다려주세요.", "success");
 
     try {
-        // 1. 텍스트 파일 내용 구성 (첫 줄: 정보, 둘째 줄부터: 가사)
-        const textContent = info + "\n" + lyrics;
-        const textBase64 = btoa(unescape(encodeURIComponent(textContent))); // 한글 깨짐 방지 base64 변환
+        // 1. 가사 텍스트 파일 생성 (admin_lyrics/[제목].txt)
+        const lyricsContentBase64 = btoa(unescape(encodeURIComponent(lyrics)));
+        const lyricsUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/admin_lyrics/${title}.txt`;
         
-        // GitHub API 경로 (lyrics/제목.txt)
-        const textUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/lyrics/${title}.txt`;
-
-        // 텍스트 업로드 fetch
-        const textResponse = await fetch(textUrl, {
+        await fetch(lyricsUrl, {
             method: 'PUT',
-            headers: {
-                'Authorization': `token ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                message: `🤖 Admin: ${title}.txt 가사 추가`,
-                content: textBase64
-            })
+            headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: `📝 동역자 등록: ${title} 가사 임시 저장`, content: lyricsContentBase64 })
         });
 
-        if (!textResponse.ok) throw new Error('가사 파일 업로드 실패');
+        // 2. 이미지 파일 Base64 변환 후 생성 (admin_images/[제목].확장자)
+        const fileExt = imageFile.name.split('.').pop();
+        const reader = new FileReader();
+        reader.readAsDataURL(imageFile);
+        reader.onload = async function () {
+            const imageBase64 = reader.result.split(',')[1];
+            const imageUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/admin_images/${title}.${fileExt}`;
+            
+            const imgRes = await fetch(imageUrl, {
+                method: 'PUT',
+                headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: `🖼️ 동역자 등록: ${title} 악보 임시 저장`, content: imageBase64 })
+            });
 
-        // 2. 이미지 파일 처리 (선택 사항)
-        if (imageFile) {
-            const reader = new FileReader();
-            reader.readAsDataURL(imageFile);
-            reader.onloadend = async () => {
-                const imgBase64 = reader.result.split(',')[1]; // base64 데이터만 추출
-                const imgUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/images/${title}.jpg`;
-
-                const imgResponse = await fetch(imgUrl, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `token ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        message: `🤖 Admin: ${title}.jpg 악보 이미지 추가`,
-                        content: imgBase64
-                    })
-                });
-
-                if (!imgResponse.ok) {
-                    statusDiv.style.color = "#e74c3c";
-                    statusDiv.innerText = "⚠️ 가사는 등록되었으나 이미지 업로드에 실패했습니다.";
-                } else {
-                    statusDiv.style.color = "#27ae60";
-                    statusDiv.innerText = "🎉 가사와 악보가 모두 성공적으로 업로드되었습니다! 약 1~2분 뒤 자동 반영됩니다.";
-                }
-            };
-        } else {
-            statusDiv.style.color = "#27ae60";
-            statusDiv.innerText = "🎉 가사가 성공적으로 업로드되었습니다! 약 1~2분 뒤 자동 반영됩니다.";
-        }
+            if (imgRes.ok) {
+                showStatus("🎉 검수 대기실에 성공적으로 등록되었습니다! 관리자 승인 후 앱에 반영됩니다.", "success");
+                document.getElementById('titleInput').value = '';
+                document.getElementById('lyricsInput').value = '';
+                document.getElementById('imageInput').value = '';
+            } else {
+                throw new Error("이미지 업로드 실패");
+            }
+        };
 
     } catch (error) {
-        console.error(error);
-        statusDiv.style.color = "#e74c3c";
-        statusDiv.innerText = "❌ 오류 발생: " + error.message;
+        showStatus("업로드 중 오류가 발생했습니다: " + error.message, "error");
     }
+}
+
+function showStatus(msg, type) {
+    const statusMsg = document.getElementById('statusMsg');
+    statusMsg.innerText = msg;
+    statusMsg.className = "status-msg " + type;
+    statusMsg.style.display = "block";
 }
 </script>
 </body>

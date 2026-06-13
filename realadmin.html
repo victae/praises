@@ -1,0 +1,229 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RealAdmin - 최종 승인 콘솔</title>
+    <style>
+        * { box-sizing: border-box; font-family: -apple-system, sans-serif; }
+        body { margin: 0; padding: 0; background-color: #eceff1; display: flex; height: 100vh; overflow: hidden; }
+        
+        /* 왼쪽 사이드바 (대기 목록) */
+        .sidebar { width: 300px; background: #263238; color: white; display: flex; flex-direction: column; border-right: 1px solid #1c262c; }
+        .sidebar h3 { padding: 20px; margin: 0; background: #1a2327; text-align: center; border-bottom: 2px solid #cca43b; font-size: 16px; }
+        .queue-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex: 1; }
+        .queue-list li { padding: 15px 20px; border-bottom: 1px solid #37474f; cursor: pointer; transition: background 0.2s; font-size: 14px; }
+        .queue-list li:hover { background: #37474f; }
+        
+        /* 오른쪽 메인 검수창 */
+        .main-panel { flex: 1; display: flex; flex-direction: column; background: #fff; }
+        .workspace { flex: 1; display: flex; overflow: hidden; }
+        
+        /* 가사 편집 영역 */
+        .editor-section { flex: 1; padding: 20px; display: flex; flex-direction: column; border-right: 1px solid #e0e0e0; }
+        .editor-section h4 { margin: 0 0 10px 0; color: #1e3d2f; }
+        .title-view { font-size: 18px; font-weight: bold; margin-bottom: 15px; padding: 10px; background: #f5f5f5; border-radius: 4px; color: #333; }
+        .lyrics-edit { flex: 1; width: 100%; padding: 15px; font-size: 15px; line-height: 1.6; border: 1px solid #cfd8dc; border-radius: 6px; resize: none; outline: none; }
+        
+        /* 악보 보기 영역 */
+        .viewer-section { flex: 1; padding: 20px; display: flex; flex-direction: column; background: #fafafa; align-items: center; overflow-y: auto; }
+        .viewer-section h4 { margin: 0 0 10px 0; color: #1e3d2f; align-self: flex-start; }
+        .sheet-img { max-width: 100%; height: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-radius: 4px; background: white; }
+        
+        /* 하단 제어 바 */
+        .control-bar { height: 70px; background: #f5f5f5; border-top: 1px solid #e0e0e0; display: flex; align-items: center; justify-content: flex-end; padding: 0 20px; gap: 15px; }
+        .btn { padding: 12px 25px; border: none; border-radius: 4px; font-weight: bold; font-size: 14px; cursor: pointer; }
+        .btn-approve { background: #1e3d2f; color: white; }
+        .btn-approve:hover { background: #2e5a44; }
+        .btn-reject { background: #e53935; color: white; }
+        
+        .no-data { display: flex; justify-content: center; align-items: center; height: 100%; width: 100%; color: #78909c; font-size: 16px; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h3>📥 검수 대기 찬양 (<span id="queueCount">0</span>)</h3>
+    <ul class="queue-list" id="queueList">
+        <div style="padding:20px; text-align:center; color:#90a4ae;">목록을 불러오는 중...</div>
+    </ul>
+</div>
+
+<div class="main-panel" id="mainPanel">
+    <div class="no-data">◀ 왼쪽 대기 목록에서 검수할 찬양을 선택해 주세요.</div>
+</div>
+
+<script>
+const GITHUB_TOKEN = "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";
+const REPO_OWNER = "victae";
+const REPO_NAME = "praises";
+
+let currentItem = null;
+
+window.onload = function() {
+    loadQueue();
+}
+
+// 1. 대기 폴더(admin_lyrics) 리스트 긁어오기
+async function loadQueue() {
+    const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/admin_lyrics`;
+    try {
+        const res = await fetch(url, { headers: { 'Authorization': `token ${GITHUB_TOKEN}` } });
+        if (!res.ok) throw new Error();
+        const files = await res.json();
+        
+        const listEl = document.getElementById('queueList');
+        listEl.innerHTML = '';
+        
+        const txtFiles = files.filter(f => f.name.endsWith('.txt'));
+        document.getElementById('queueCount').innerText = txtFiles.length;
+
+        if(txtFiles.length === 0) {
+            listEl.innerHTML = '<div style="padding:20px; text-align:center; color:#90a4ae;">대기 중인 곡이 없습니다. 😊</div>';
+            return;
+        }
+
+        txtFiles.forEach(file => {
+            const li = document.createElement('li');
+            li.innerText = file.name.replace('.txt', '');
+            li.onclick = () => selectItem(file.name, file.sha);
+            listEl.appendChild(li);
+        });
+    } catch (e) {
+        document.getElementById('queueList').innerHTML = '<div style="padding:20px; text-align:center; color:#e53935;">목록 로드 실패 (토큰/경로 확인)</div>';
+    }
+}
+
+// 2. 대기 곡 선택 시 가사 내용 및 매칭되는 임시 이미지 뷰어 띄우기
+async function selectItem(filename, sha) {
+    const title = filename.replace('.txt', '');
+    const mainPanel = document.getElementById('mainPanel');
+    mainPanel.innerHTML = '<div class="no-data">데이터를 상세 분석 중입니다...</div>';
+
+    try {
+        // 가사 텍스트 본문 가져오기
+        const txtUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/admin_lyrics/${filename}`;
+        const txtRes = await fetch(txtUrl, { headers: { 'Authorization': `token ${GITHUB_TOKEN}` } });
+        const txtData = await txtRes.json();
+        const lyrics = decodeURIComponent(escape(atob(txtData.content)));
+
+        // 대기 이미지 폴더 스캔해서 확장자 상관없이 같은 제목 이미지 찾기
+        const imgDirUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/admin_images`;
+        const imgDirRes = await fetch(imgDirUrl, { headers: { 'Authorization': `token ${GITHUB_TOKEN}` } });
+        const imgFiles = await imgDirRes.json();
+        const matchedImg = imgFiles.find(f => f.name.startsWith(title));
+
+        currentItem = {
+            title: title,
+            lyricsSha: sha,
+            imageName: matchedImg ? matchedImg.name : null,
+            imageSha: matchedImg ? matchedImg.sha : null,
+            imageDownloadUrl: matchedImg ? matchedImg.download_url : ''
+        };
+
+        mainPanel.innerHTML = `
+            <div class="workspace">
+                <div class="editor-section">
+                    <h4>📝 가사 검수 및 실시간 교정</h4>
+                    <div class="title-view">${title}</div>
+                    <textarea class="lyrics-edit" id="activeLyrics">${lyrics}</textarea>
+                </div>
+                <div class="viewer-section">
+                    <h4>🎼 악보 화질 및 매칭 확인</h4>
+                    ${currentItem.imageName ? `<img src="${currentItem.imageDownloadUrl}" class="sheet-img">` : `<div class="no-data">업로드된 대기 이미지가 없습니다.</div>`}
+                </div>
+            </div>
+            <div class="control-bar">
+                <button class="btn btn-reject" onclick="rejectItem()">반려 (삭제) 🗑️</button>
+                <button class="btn btn-approve" onclick="approveItem()">이상 없음 (최종 승인)  ✓</button>
+            </div>
+        `;
+    } catch (e) {
+        mainPanel.innerHTML = '<div class="no-data" style="color:#e53935;">상세 데이터를 가져오지 못했습니다.</div>';
+    }
+}
+
+// 3. [이상 없음] 최종 승인 로직 (핵심)
+async function approveItem() {
+    if (!currentItem) return;
+    const editedLyrics = document.getElementById('activeLyrics').value.trim();
+    if(!confirm(`'${currentItem.title}' 곡을 정식 등록하시겠습니까?`)) return;
+
+    document.getElementById('mainPanel').innerHTML = '<div class="no-data">🚀 파일을 정식 폴더로 이동 및 청소 중... 약 5초 소요됩니다.</div>';
+
+    try {
+        // [A] 가사를 정식 폴더(lyrics/)에 새로 작성 생성
+        const finalLyricsUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/lyrics/${currentItem.title}.txt`;
+        const lyricsBase64 = btoa(unescape(encodeURIComponent(editedLyrics)));
+        await fetch(finalLyricsUrl, {
+            method: 'PUT',
+            headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: `✨ 정식 승인: ${currentItem.title} 가사 등록 완료`, content: lyricsBase64 })
+        });
+
+        // [B] 이미지를 정식 폴더(images/)에 복사 이전 생성
+        if (currentItem.imageName) {
+            // 원본 이미지 가상 로드 다운로드
+            const imgBlobRes = await fetch(currentItem.imageDownloadUrl);
+            const imgBlob = await imgBlobRes.blob();
+            
+            // Base64로 다시 포장
+            const reader = new FileReader();
+            reader.readAsDataURL(imgBlob);
+            reader.onloadend = async function() {
+                const finalImgBase64 = reader.result.split(',')[1];
+                const finalImageUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/images/${currentItem.imageName}`;
+                
+                await fetch(finalImageUrl, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: `✨ 정식 승인: ${currentItem.title} 악보 이미지 등록 완료`, content: finalImgBase64 })
+                });
+                
+                // [C] 이동 완료 후 대기 청소방 비우기 실행
+                await deleteStagingFiles();
+            }
+        } else {
+            await deleteStagingFiles();
+        }
+    } catch (e) {
+        alert("승인 처리 중 네트워크 통신 에러 발생");
+        loadQueue();
+    }
+}
+
+// 임시 방 청소 처리 보조 함수
+async function deleteStagingFiles() {
+    // 1. 대기 가사 삭제
+    const delTxtUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/admin_lyrics/${currentItem.title}.txt`;
+    await fetch(delTxtUrl, {
+        method: 'DELETE',
+        headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: `🗑️ 검수 완료 청소: 임시 가사 제거`, sha: currentItem.lyricsSha })
+    });
+
+    // 2. 대기 이미지 삭제
+    if (currentItem.imageName) {
+        const delImgUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/admin_images/${currentItem.imageName}`;
+        await fetch(delImgUrl, {
+            method: 'DELETE',
+            headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: `🗑️ 검수 완료 청소: 임시 이미지 제거`, sha: currentItem.imageSha })
+        });
+    }
+
+    alert("🎉 최종 승인 및 릴리즈 완료! 잠시 후 스마트폰 앱에 반영됩니다.");
+    currentItem = null;
+    document.getElementById('mainPanel').innerHTML = '<div class="no-data">◀ 왼쪽 대기 목록에서 검수할 찬양을 선택해 주세요.</div>';
+    loadQueue();
+}
+
+// 4. [반려/삭제] 대기실에서 영구 탈락 처리
+async function rejectItem() {
+    if (!currentItem || !confirm("이 대기 데이터에 결함이 있나요? 저장소에서 영구 삭제합니다.")) return;
+    document.getElementById('mainPanel').innerHTML = '<div class="no-data">🗑️ 대기실 데이터를 안전하게 파쇄 중...</div>';
+    await deleteStagingFiles();
+}
+</script>
+</body>
+</html>
