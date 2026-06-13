@@ -73,7 +73,7 @@ let ccmData = [];
 const imageExtensions = ['.gif', '.bmp', '.jpg', '.jpeg', '.png'];
 
 window.onload = function() {
-    fetch('ccm_data.json')
+    fetch('ccm_data.json?v=1')
         .then(response => response.json())
         .then(data => {
             ccmData = data.map(item => {
