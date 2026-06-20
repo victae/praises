@@ -1,61 +1,9 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Praise Knock - 동역자 업로드 Admin</title>
-    <style>
-        * { box-sizing: border-box; font-family: -apple-system, sans-serif; }
-        body { background-color: #f5f7f6; padding: 20px; margin: 0; display: flex; justify-content: center; }
-        .admin-box { width: 100%; max-width: 600px; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-top: 5px solid #1e3d2f; }
-        h2 { color: #1e3d2f; margin-top: 0; text-align: center; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; font-weight: bold; margin-bottom: 8px; color: #333; font-size: 14px; }
-        input[type="text"], textarea, input[type="file"] { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; outline: none; }
-        input[type="text"]:focus, textarea:focus { border-color: #1e3d2f; }
-        textarea { height: 180px; resize: vertical; line-height: 1.6; }
-        .hint { font-size: 12px; color: #666; margin-top: 4px; }
-        .btn-submit { width: 100%; padding: 15px; background-color: #1e3d2f; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
-        .btn-submit:hover { background-color: #2e5a44; }
-        .status-msg { margin-top: 15px; padding: 12px; border-radius: 6px; text-align: center; font-weight: bold; display: none; }
-        .success { background-color: #e8f5e9; color: #2e7d32; }
-        .error { background-color: #ffebee; color: #c62828; }
-    </style>
-</head>
-<body>
-
-<div class="admin-box">
-    <h2>🎼 새 찬양 데이터 등록 (임시 계측)</h2>
-    
-    <div class="form-group">
-        <label for="titleInput">찬양 제목 (출처 규칙 필수)</label>
-        <input type="text" id="titleInput" placeholder="예: 원하고 바라고 기도합니다-마커스">
-        <div class="hint">⚠️ 공백 없는 밀착형 규칙 통일을 위해 하이픈 앞뒤에 공백 없이 적어주세요. (예: 제목-출처)</div>
-    </div>
-
-    <div class="form-group">
-        <label for="lyricsInput">가사 본문 입력</label>
-        <textarea id="lyricsInput" placeholder="찬양 가사를 단락에 맞춰 입력해 주세요."></textarea>
-    </div>
-
-    <div class="form-group">
-        <label for="imageInput">악보 이미지 선택</label>
-        <input type="file" id="imageInput" accept="image/*">
-        <div class="hint">지원 확장자: jpg, png, gif 등 (서버에서 고효율 jpg로 자동 전환 예정)</div>
-    </div>
-
-    <button class="btn-submit" onclick="uploadToStaging()">검수 대기실로 등록하기 🚀</button>
-    <div id="statusMsg" class="status-msg"></div>
-</div>
-
-<script>
 // =================================================================
-// 🔐 고정 로그인 및 토큰 쪼개기 영역
+// 🔐 고정 로그인 및 토큰 영역 (⚠️동역자 배포시 토큰 노출 주의!)
 // =================================================================
-const ADMIN_ID = "praise";     // 👈 동역자 로그인 아이디
-const ADMIN_PW = "1004";       // 👈 동역자 로그인 비밀번호
+const ADMIN_ID = "praise";     
+const ADMIN_PW = "1004";       
 
-// 💡 진짜 ghp_... 토큰 값 수십 자리를 3개로 적당히 쪼개서 나눠 적으세요!
 const t1 = "ghp_nWvvg5mVItS"; 
 const t2 = "4jMUx0RRvH99p"; 
 const t3 = "1FLp1P370iJG"; 
@@ -63,11 +11,18 @@ const REAL_TOKEN = t1 + t2 + t3;
 
 const REPO_OWNER = "victae"; 
 const REPO_NAME = "praises"; 
-// =================================================================
 
-// 웹페이지가 켜지자마자 실행되는 가상 로그인 로직
 let GITHUB_TOKEN = "";
-if (!sessionStorage.getItem('praise_logged_in')) {
+
+// 💡 페이지 로드 시 보안 검사 수행 함수
+function checkAuth() {
+    // 이미 로그인 성공한 세션이 있다면
+    if (sessionStorage.getItem('praise_logged_in') === 'true') {
+        GITHUB_TOKEN = REAL_TOKEN;
+        return;
+    }
+
+    // 로그인 정보가 없다면 즉시 프롬프트 차단
     const inputId = prompt("👤 업로드 시스템 로그인 아이디:");
     const inputPw = prompt("🔒 업로드 시스템 로그인 비밀번호:");
     
@@ -78,5 +33,9 @@ if (!sessionStorage.getItem('praise_logged_in')) {
         alert("❌ 로그인 정보가 올바르지 않습니다.");
         document.body.innerHTML = "<h2 style='text-align:center; margin-top:50px; color:red;'>접근 권한이 없습니다.</h2>";
     }
-} else {
-    GITHUB_TOKEN = REAL_TOKEN;
+}
+
+// 실행문 호출 및 중괄호 완전 마감
+checkAuth();
+
+// 이후에 uploadToStaging() 함수 등 기존 코드 이어서 작성...
