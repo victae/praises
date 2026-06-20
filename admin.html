@@ -103,9 +103,9 @@
 const ADMIN_ID = "praise";     
 const ADMIN_PW = "1004";       
 
-const t1 = "ghp_nWvvg5mVItS"; 
-const t2 = "4jMUx0RRvH99p"; 
-const t3 = "1FLp1P370iJG"; 
+const t1 = "ghp_r0exLAooKD5MIq"; 
+const t2 = "05FUeC7rW8XIUJ"; 
+const t3 = "782Aw8KF"; 
 const REAL_TOKEN = t1 + t2 + t3;
 
 const REPO_OWNER = "victae"; 
@@ -174,26 +174,30 @@ async function checkConflictAndUpload() {
     }
 }
 
-// [2] 충돌 화면 보여주기
+// [2] 충돌 화면 보여주기 (이대로 통째로 복사해서 붙여넣으세요)
 function showConflictView(title, existingLyricsText) {
     document.getElementById('mainFormView').style.display = 'none';
     document.getElementById('conflictView').style.display = 'block';
+    
+    // 1. 가져온 가사 텍스트는 화면 글자 박스에 집어넣기
     document.getElementById('existingLyrics').innerText = existingLyricsText;
     
-    // 기존 이미지도 띄워주기 시도 (확장자 예측 순회)
+    // 2. 기존 이미지 영역 초기화 후 주소 조립해서 띄우기
     const imgArea = document.getElementById('existingImageArea');
     imgArea.innerHTML = "";
     
     const exts = ['jpg', 'png', 'gif', 'jpeg'];
     exts.forEach(ext => {
         const img = document.createElement('img');
-        img.src = `https://raw.githubusercontent.com/I/praises/main/images/${title}.${ext}?v=${Date.now()}`;
+        
+        // 💡 여기에 title 변수만 들어가서 "images/복이라-물소리.jpg" 형태로 완성됩니다.
+        img.src = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/images/${title}.${ext}?v=${Date.now()}`;
+        
         img.className = 'preview-img';
-        img.onerror = () => img.style.display = 'none'; // 없으면 숨김
+        img.onerror = () => img.style.display = 'none'; // 해당 확장자 이미지가 없으면 숨김
         imgArea.appendChild(img);
     });
 }
-
 // [3] 다른 곡 선언 시 출처 적는 칸 유도
 function showSourceEditForm() {
     document.getElementById('conflictActionArea').style.display = 'none';

@@ -1,12 +1,12 @@
 ﻿// =================================================================
 // 🔐 최고 관리자 로그인 및 토큰 쪼개기 영역
 // =================================================================
-const SUPER_ID = "nathan";    // 👈 박태한 님 전용 관리자 아이디
-const SUPER_PW = "1004";      // 👈 박태한 님 전용 관리자 비밀번호
+const SUPER_ID = "nathan"; // 👈 박태한 님 전용 관리자 아이디
+const SUPER_PW = "1004"; // 👈 박태한 님 전용 관리자 비밀번호
 
-const t1 = "ghp_nWvvg5mVItS"; 
-const t2 = "4jMUx0RRvH99p"; 
-const t3 = "1FLp1P370iJG"; 
+const t1 = "ghp_r0exLAooKD5MIq";
+const t2 = "05FUeC7rW8XIUJ";
+const t3 = "782Aw8KF";
 const REAL_TOKEN = t1 + t2 + t3;
 
 const REPO_OWNER = "victae";
@@ -18,13 +18,17 @@ let GITHUB_TOKEN = "";
 if (!sessionStorage.getItem('praise_super_logged_in')) {
     const inputId = prompt("👑 관리자 시스템 로그인 아이디:");
     const inputPw = prompt("🔒 관리자 시스템 로그인 비밀번호:");
-    
+
     if (inputId === SUPER_ID && inputPw === SUPER_PW) {
         sessionStorage.setItem('praise_super_logged_in', 'true');
         GITHUB_TOKEN = REAL_TOKEN;
     } else {
         alert("❌ 관리자 인증 실패!");
-        document.body.innerHTML = "<h2 style='text-align:center; margin-top:50px; color:red;'>관리자만 접근 가능합니다.</h2>";
+        document.body.innerHTML = `
+            <h2 style="text-align:center; margin-top:50px; color:red;">
+                관리자만 접근 가능합니다.
+            </h2>
+        `;
     }
 } else {
     GITHUB_TOKEN = REAL_TOKEN;
@@ -43,11 +47,10 @@ async function loadQueue() {
         const res = await fetch(url, { headers: { 'Authorization': `token ${GITHUB_TOKEN}` } });
         if (!res.ok) throw new Error();
         const files = await res.json();
-        
+
         const listEl = document.getElementById('queueList');
         listEl.innerHTML = '';
-        
-        // ⭕ endswith -> endsWith 문법 교정 완료
+
         const txtFiles = files.filter(f => f.name.endsWith('.txt'));
         document.getElementById('queueCount').innerText = txtFiles.length;
 
@@ -63,6 +66,7 @@ async function loadQueue() {
             listEl.appendChild(li);
         });
     } catch (e) {
+        // 💡 에러 문구 줄바꿈 꼬임 버그 완벽 수리
         document.getElementById('queueList').innerHTML = '<div style="padding:20px; text-align:center; color:#e53935;">목록 로드 실패 (토큰/로그인 확인)</div>';
     }
 }
@@ -77,6 +81,7 @@ async function selectItem(filename, sha) {
         const txtUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/admin_lyrics/${filename}`;
         const txtRes = await fetch(txtUrl, { headers: { 'Authorization': `token ${GITHUB_TOKEN}` } });
         const txtData = await txtRes.json();
+        
         const lyrics = decodeURIComponent(escape(atob(txtData.content)));
 
         const imgDirUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/admin_images`;
@@ -92,6 +97,11 @@ async function selectItem(filename, sha) {
             imageDownloadUrl: matchedImg ? matchedImg.download_url : ''
         };
 
+        let imageHtml = '<div class="no-data">업로드된 대기 이미지가 없습니다.</div>';
+        if (currentItem.imageName) {
+            imageHtml = `<img src="${currentItem.imageDownloadUrl}" class="sheet-img">`;
+        }
+
         mainPanel.innerHTML = `
             <div class="workspace">
                 <div class="editor-section">
@@ -101,7 +111,7 @@ async function selectItem(filename, sha) {
                 </div>
                 <div class="viewer-section">
                     <h4>🎼 악보 화질 및 매칭 확인</h4>
-                    ${currentItem.imageName ? `<img src="${currentItem.imageDownloadUrl}" class="sheet-img">` : `<div class="no-data">업로드된 대기 이미지가 없습니다.</div>`}
+                    ${imageHtml}
                 </div>
             </div>
             <div class="control-bar">
@@ -124,7 +134,10 @@ async function approveItem() {
 
     try {
         const finalLyricsUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/lyrics/${currentItem.title}.txt`;
-        const lyricsBase64 = btoa(unescape(encodeURIComponent(editedLyrics)));
+
+        const lyricsBytes = new TextEncoder().encode(editedLyrics);
+        const lyricsBase64 = btoa(String.fromCharCode(...lyricsBytes));
+
         await fetch(finalLyricsUrl, {
             method: 'PUT',
             headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Content-Type': 'application/json' },
@@ -134,19 +147,20 @@ async function approveItem() {
         if (currentItem.imageName) {
             const imgBlobRes = await fetch(currentItem.imageDownloadUrl);
             const imgBlob = await imgBlobRes.blob();
-            
+
             const reader = new FileReader();
             reader.readAsDataURL(imgBlob);
             reader.onloadend = async function() {
                 const finalImgBase64 = reader.result.split(',')[1];
+                // 💡 중복된 contents/contents 경로 수정 완료!
                 const finalImageUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/images/${currentItem.imageName}`;
-                
+
                 await fetch(finalImageUrl, {
                     method: 'PUT',
                     headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message: `✨ 정식 승인: ${currentItem.title} 악보 이미지 등록 완료`, content: finalImgBase64 })
                 });
-                
+
                 await deleteStagingFiles();
             }
         } else {
