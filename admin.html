@@ -3,97 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Praise Knock - 동역자 업로드 Admin</title>
+    <title>🤝 찬양 동역자 업로드 대기실</title>
     <style>
-        * { box-sizing: border-box; font-family: -apple-system, sans-serif; }
-        body { background-color: #f5f7f6; padding: 20px; margin: 0; display: flex; justify-content: center; }
-        .admin-box { width: 100%; max-width: 600px; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-top: 5px solid #1e3d2f; }
-        h2 { color: #1e3d2f; margin-top: 0; text-align: center; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; font-weight: bold; margin-bottom: 8px; color: #333; font-size: 14px; }
-        input[type="text"], textarea, input[type="file"] { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; outline: none; }
-        input[type="text"]:focus, textarea:focus { border-color: #1e3d2f; }
-        textarea { height: 180px; resize: vertical; line-height: 1.6; }
-        .hint { font-size: 12px; color: #666; margin-top: 4px; }
-        .btn-submit { width: 100%; padding: 15px; background-color: #1e3d2f; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; width: 100%; margin-bottom: 10px; }
-        .btn-submit:hover { background-color: #2e5a44; }
-        .btn-neutral { width: 100%; padding: 14px; background-color: #7f8c8d; color: white; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
-        .status-msg { margin-top: 15px; padding: 12px; border-radius: 6px; text-align: center; font-weight: bold; display: none; }
-        .success { background-color: #e8f5e9; color: #2e7d32; }
-        .error { background-color: #ffebee; color: #c62828; }
-        
-        /* 🚨 충돌 모달/화면 스타일 */
-        #conflictView, #successView { display: none; }
-        .preview-box { background: #f9f9f9; padding: 15px; border-radius: 6px; border: 1px solid #e0e0e0; margin-top: 10px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; font-size: 14px; color: #555; }
-        .preview-img { width: 100%; height: auto; border-radius: 6px; margin-top: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .flex-btn-group { display: flex; gap: 10px; margin-top: 20px; }
-        .flex-btn-group button { flex: 1; }
+        :root {
+            --primary: #2e7d32;
+            --primary-light: #e8f5e9;
+            --accent: #1565c0;
+            --text: #37474f;
+            --bg: #f8f9fa;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .upload-container {
+            background: white;
+            padding: 35px;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+            width: 100%;
+            max-width: 550px;
+        }
+        h2 {
+            color: var(--primary);
+            margin-top: 0;
+            text-align: center;
+            font-size: 24px;
+            border-bottom: 2px solid var(--primary-light);
+            padding-bottom: 15px;
+        }
+        .form-group {
+            margin-bottom: 22px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #455a64;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1.5px solid #cfd8dc;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+        input[type="text"]:focus, textarea:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+        textarea {
+            height: 180px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .file-custom {
+            display: block;
+            padding: 12px;
+            background: #cfd8dc;
+            color: #37474f;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .file-custom:hover {
+            background: #b0bec5;
+        }
+        .file-name-display {
+            margin-top: 6px;
+            font-size: 13px;
+            color: var(--accent);
+            text-align: center;
+            word-break: break-all;
+        }
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            box-shadow: 0 4px 12px rgba(46, 125, 50, 0.2);
+        }
+        .btn-submit:hover {
+            background-color: #1b5e20;
+        }
+        .status-msg {
+            margin-top: 15px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
 
-<div class="admin-box">
-    <div id="mainFormView">
-        <h2>🎼 새 찬양 데이터 등록 (임시 계측)</h2>
-        
-        <div class="form-group">
-            <label for="titleInput">찬양 제목 (출처 규칙 필수)</label>
-            <input type="text" id="titleInput" placeholder="예: 원하고 바라고 기도합니다-마커스">
-            <div class="hint">⚠️ 공백 없는 밀착형 규칙 통일을 위해 하이픈 앞뒤에 공백 없이 적어주세요. (예: 제목-출처)</div>
-        </div>
-
-        <div class="form-group">
-            <label for="lyricsInput">가사 본문 입력</label>
-            <textarea id="lyricsInput" placeholder="찬양 가사를 단락에 맞춰 입력해 주세요."></textarea>
-        </div>
-
-        <div class="form-group">
-            <label for="imageInput">악보 이미지 선택</label>
-            <input type="file" id="imageInput" accept="image/*">
-            <div class="hint">지원 확장자: jpg, png, gif 등 (서버에서 고효율 jpg로 자동 전환 예정)</div>
-        </div>
-
-        <button class="btn-submit" onclick="checkConflictAndUpload()">검수 대기실로 등록하기 🚀</button>
-        <div id="statusMsg" class="status-msg"></div>
+<div class="upload-container">
+    <h2>🤝 찬양 검수 대기실 등록</h2>
+    
+    <div class="form-group">
+        <label for="songTitle">🎼 찬양 제목</label>
+        <input type="text" id="songTitle" placeholder="예: 은혜로다 (오타 없이 명확하게)">
     </div>
 
-    <div id="conflictView">
-        <h2 style="color: #c62828;">⚠️ 이미 등록된 찬양이 있습니다!</h2>
-        <p style="text-align: center; font-size: 14px; color: #666;">서버에 이미 같은 이름의 찬양이 존재합니다.<br>아래 기존 데이터와 비교해 보세요.</p>
-        
-        <div style="font-weight: bold; margin-bottom: 8px; color: #333; font-size: 14px;">📄 기존 등록된 가사</div>
-        <div id="existingLyrics" class="preview-box">불러오는 중...</div>
-
-        <div style="font-weight: bold; margin-top: 15px; margin-bottom: 8px; color: #333; font-size: 14px;">🎼 기존 등록된 악보</div>
-        <div id="existingImageArea"></div>
-
-        <hr style="border: 0; border-top: 1px solid #f0f0f0; margin: 25px 0;">
-
-        <div id="conflictActionArea">
-            <p style="font-weight: bold; text-align: center; color: #1e3d2f;">동일한 곡이 맞나요?</p>
-            <div class="flex-btn-group">
-                <button class="btn-neutral" onclick="resetToMain()">네, 같은 곡입니다 (처음으로)</button>
-                <button class="btn-submit" onclick="showSourceEditForm()">아니오, 다른 곡입니다</button>
-            </div>
-        </div>
-
-        <div id="sourceEditArea" style="display: none;">
-            <p style="font-weight: bold; color: #c62828;">다른 곡이라면 출처(-뒤 텍스트)를 수정해 주세요.</p>
-            <div class="form-group">
-                <label for="newSourceInput">하이픈(-) 뒤에 들어갈 새로운 출처 입력</label>
-                <input type="text" id="newSourceInput" placeholder="예: 시와찬미, 물소리, 어노인팅 등">
-                <div class="hint">여기에 입력한 단어로 제목 뒤(-출처)가 변경되어 새로 등록됩니다.</div>
-            </div>
-            <button class="btn-submit" onclick="retryUploadWithNewSource()">수정 후 다시 등록하기 🚀</button>
-            <button class="btn-neutral" onclick="resetToMain()">취소하고 처음으로 돌아가기</button>
-        </div>
+    <div class="form-group">
+        <label for="songLyrics">📝 찬양 가사</label>
+        <textarea id="songLyrics" placeholder="1절, 2절, 후렴 등을 정확히 구분하여 입력해 주세요."></textarea>
     </div>
 
-    <div id="successView">
-        <h2 style="color: #2e7d32;">🎉 등록 완료!</h2>
-        <p id="successMsgText" style="text-align: center; font-size: 16px; margin: 30px 0; line-height: 1.6;"></p>
-        <button class="btn-submit" onclick="resetToMain()">🏠 처음으로 돌아가기 (새로 등록)</button>
+    <div class="form-group">
+        <label>🎼 악보 이미지 (선택)</label>
+        <label for="songImage" class="file-custom">파일 선택하기 📂</label>
+        <input type="file" id="songImage" accept="image/*" onchange="displayFileName()">
+        <div class="file-name-display" id="fileName">선택된 파일이 없습니다.</div>
     </div>
+
+    <button class="btn-submit" onclick="submitToStaging()">검수 대기실로 등록하기 🚀</button>
+    <div class="status-msg" id="status"></div>
 </div>
 
 <script>
@@ -108,32 +153,9 @@ const t2 = "05FUeC7rW8XIUJ";
 const t3 = "782Aw8KF"; 
 const REAL_TOKEN = t1 + t2 + t3;
 
-const REPO_OWNER = "victae"; 
-const REPO_NAME = "praises"; 
-
-let GITHUB_TOKEN = "";
-let pendingFile = null; // 대기 중인 파일 인스턴스 임시 보관용
-
-function authenticateUser() {
-    if (sessionStorage.getItem('praise_logged_in') === 'true') {
-        GITHUB_TOKEN = REAL_TOKEN;
-        return;
-    }
-    const inputId = prompt("👤 업로드 시스템 로그인 아이디:");
-    const inputPw = prompt("🔒 업로드 시스템 로그인 비밀번호:");
-    
-    if (inputId === ADMIN_ID && inputPw === ADMIN_PW) {
-        sessionStorage.setItem('praise_logged_in', 'true');
-        GITHUB_TOKEN = REAL_TOKEN;
-    } else {
-        alert("❌ 로그인 정보가 올바르지 않습니다.");
-        document.body.innerHTML = "<h2 style='text-align:center; margin-top:50px; color:red;'>접근 권한이 없습니다.</h2>";
-    }
-}
-authenticateUser();
-
-// =================================================================
-// 🚀 핵심 로직: 충돌 체크 및 분기 흐름
+const REPO_OWNER = "victae";
+const REPO_NAME = "praises";
+const GITHUB_TOKEN = t1 + t2 + t3; // 👈 본인의 토큰 조립 방식에 맞게 유지
 // =================================================================
 
 // [1] 최초 등록 시도 버튼 클릭시 실행
@@ -148,6 +170,7 @@ async function checkConflictAndUpload() {
 
     showStatus("기존 등록 여부 검사 중... 🔍", "success");
 
+    // 💡 검사는 정식 등록 폴더(lyrics/)에 이미 똑같은 노래가 있는지 확인합니다.
     const textUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/lyrics/${title}.txt`;
 
     try {
@@ -156,14 +179,12 @@ async function checkConflictAndUpload() {
         });
 
         if (response.status === 200) {
-            // 🔥 충돌 발생! 파일이 이미 존재함
+            // 🔥 충돌 발생! 파일이 이미 존재함 -> 기존 가사 보여주고 다른 곡 유도
             const data = await response.json();
-            // 기존 가사 디코딩 (utf-8 깨짐 방지)
             const existingLyricsText = decodeURIComponent(escape(atob(data.content)));
-            
             showConflictView(title, existingLyricsText);
         } else if (response.status === 404) {
-            // 👍 충돌 없음! 바로 업로드 진행
+            // 👍 충돌 없음! 바로 대기실 업로드 진행
             executeUpload(title, lyrics);
         } else {
             showStatus("❌ 통신 중 오류가 발생했습니다.", "error");
@@ -174,30 +195,26 @@ async function checkConflictAndUpload() {
     }
 }
 
-// [2] 충돌 화면 보여주기 (이대로 통째로 복사해서 붙여넣으세요)
+// [2] 충돌 화면 보여주기
 function showConflictView(title, existingLyricsText) {
     document.getElementById('mainFormView').style.display = 'none';
     document.getElementById('conflictView').style.display = 'block';
     
-    // 1. 가져온 가사 텍스트는 화면 글자 박스에 집어넣기
     document.getElementById('existingLyrics').innerText = existingLyricsText;
     
-    // 2. 기존 이미지 영역 초기화 후 주소 조립해서 띄우기
     const imgArea = document.getElementById('existingImageArea');
     imgArea.innerHTML = "";
     
     const exts = ['jpg', 'png', 'gif', 'jpeg'];
     exts.forEach(ext => {
         const img = document.createElement('img');
-        
-        // 💡 여기에 title 변수만 들어가서 "images/복이라-물소리.jpg" 형태로 완성됩니다.
         img.src = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/images/${title}.${ext}?v=${Date.now()}`;
-        
         img.className = 'preview-img';
-        img.onerror = () => img.style.display = 'none'; // 해당 확장자 이미지가 없으면 숨김
+        img.onerror = () => img.style.display = 'none';
         imgArea.appendChild(img);
     });
 }
+
 // [3] 다른 곡 선언 시 출처 적는 칸 유도
 function showSourceEditForm() {
     document.getElementById('conflictActionArea').style.display = 'none';
@@ -215,40 +232,36 @@ function retryUploadWithNewSource() {
         return;
     }
 
-    // 하이픈 위치 분리 후 재조합
     let pureTitle = originalTitle;
     if (originalTitle.includes('-')) {
         pureTitle = originalTitle.split('-')[0].trim();
     }
     
     const finalNewTitle = `${pureTitle}-${newSource}`;
-    
-    // 다시 업로드 프로세스 탑승
     executeUpload(finalNewTitle, lyrics);
 }
 
-// [5] 실제 깃허브 업로드 처리 최종 실행자
+// [5] 실제 깃허브 업로드 처리 최종 실행자 (🎯 대기실 경로 매핑 완벽 수정 버전)
 async function executeUpload(targetTitle, lyricsContent) {
     const fileInput = document.getElementById('imageInput');
     
-    // 로딩 처리
     document.getElementById('conflictView').style.display = 'none';
     document.getElementById('mainFormView').style.display = 'none';
     document.getElementById('successView').style.display = 'block';
     document.getElementById('successMsgText').innerText = "데이터 대기실에 등록을 진행 중입니다... 🚀";
 
     try {
-        // 1. 가사 텍스트 저장
+        // 1. 가사 텍스트 저장 ➡️ 'admin_lyrics' 임시 대기실 폴더로 변경 완료!
         const textContent = btoa(unescape(encodeURIComponent(lyricsContent)));
-        const textUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/lyrics/${targetTitle}.txt`;
+        const textUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/admin_lyrics/${targetTitle}.txt`;
         
         await fetch(textUrl, {
             method: 'PUT',
             headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: `가사 추가: ${targetTitle}`, content: textContent })
+            body: JSON.stringify({ message: `➕ 대기실 가사 추가: ${targetTitle}`, content: textContent })
         });
 
-        // 2. 이미지 파일 연동 처리
+        // 2. 이미지 파일 연동 처리 ➡️ 'admin_images' 임시 대기실 폴더로 변경 완료!
         if (fileInput.files.length > 0) {
             const file = fileInput.files[0];
             const ext = file.name.split('.').pop();
@@ -256,12 +269,12 @@ async function executeUpload(targetTitle, lyricsContent) {
             
             reader.onload = async function(e) {
                 const imgContent = e.target.result.split(',')[1];
-                const imgUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/images/${targetTitle}.${ext}`;
+                const imgUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/admin_images/${targetTitle}.${ext}`;
                 
                 await fetch(imgUrl, {
                     method: 'PUT',
                     headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: `악보 추가: ${targetTitle}`, content: imgContent })
+                    body: JSON.stringify({ message: `➕ 대기실 악보 추가: ${targetTitle}`, content: imgContent })
                 });
                 
                 showFinalSuccess(targetTitle, true);
@@ -281,25 +294,21 @@ function showFinalSuccess(finalTitle, hasImg) {
     document.getElementById('successMsgText').innerHTML = `
         <strong>[ ${finalTitle} ]</strong><br>
         검수 대기실에 성공적으로 등록되었습니다.<br>
-        ${hasImg ? '📝 가사 및 🎼 악보 반영 완료' : '📝 가사 반영 완료 (악보 없음)'}
+        ${hasImg ? '📝 임시 가사 및 🎼 임시 악보 대기 완료' : '📝 임시 가사 대기 완료 (악보 없음)'}
     `;
 }
 
 // [7] 초기화 후 처음으로 돌아가기
 function resetToMain() {
-    // 입력창 폼 비우기
     document.getElementById('titleInput').value = '';
     document.getElementById('lyricsInput').value = '';
     document.getElementById('imageInput').value = '';
     document.getElementById('newSourceInput').value = '';
     
-    // 알림 메시지 초기화
     const statusMsg = document.getElementById('statusMsg');
     statusMsg.innerText = '';
     statusMsg.style.display = 'none';
 
-    // 뷰 대전환 (처음 화면으로 복귀)
-    document.getElementById('conflictView').style.style = 'none';
     document.getElementById('sourceEditArea').style.display = 'none';
     document.getElementById('conflictActionArea').style.display = 'block';
     document.getElementById('successView').style.display = 'none';
@@ -313,6 +322,3 @@ function showStatus(msg, type) {
     statusMsg.className = `status-msg ${type}`;
     statusMsg.style.display = 'block';
 }
-</script>
-</body>
-</html>
