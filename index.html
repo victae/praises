@@ -72,8 +72,8 @@ let ccmData = [];
 const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp'];
 
 window.onload = function() {
-    // 💡 최신 인덱스 동기화를 위해 v=103으로 빌드업
-    fetch('ccm_data.json?v=103')
+    // 💡 Date.now()를 사용해 매 접속/새로고침마다 고유한 파라미터를 붙여 캐시를 완전히 방지합니다.
+    fetch(`ccm_data.json?v=${Date.now()}`)
         .then(response => response.json())
         .then(data => {
             ccmData = data.map(item => {
