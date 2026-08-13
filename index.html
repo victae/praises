@@ -28,7 +28,7 @@
             min-height: 100vh;
         }
 
-        /* 🟦 상단 헤더 */
+        /* 🟦 Header */
         header {
             background: linear-gradient(135deg, #0d47a1, #1565c0);
             color: white;
@@ -39,7 +39,7 @@
 
         header h1 { margin: 0; font-size: 24px; font-weight: bold; }
 
-        /* 🔍 시니어 배려 대형 실시간 검색창 */
+        /* 🔍 Search Input Area */
         .search-container {
             padding: 15px 20px;
             background: white;
@@ -72,7 +72,7 @@
             box-shadow: 0 0 0 4px var(--primary-light);
         }
 
-        /* 🟩 메인 데이터 컨테이너 */
+        /* 🟩 Main Layout Container */
         .container {
             max-width: 1000px;
             margin: 0 auto;
@@ -81,7 +81,7 @@
             flex: 1;
         }
 
-        /* 📋 찬양 검색 결과 목록 */
+        /* 📋 Song List */
         .song-list {
             list-style: none;
             padding: 0;
@@ -122,7 +122,7 @@
             font-weight: bold;
         }
 
-        /* 🎼 대형 악보 전용 뷰어 화면 (가사 영역 제거 완료) */
+        /* 🎼 Viewer Container */
         .viewer-container {
             display: none;
             background: white;
@@ -159,7 +159,7 @@
             padding-bottom: 15px;
         }
 
-        /* 🏷️ 찬미예수2000, 물소리 등 악보 출처 선택 탭 */
+        /* 🏷️ Source Tabs */
         .version-tabs {
             display: flex;
             flex-wrap: wrap;
@@ -187,7 +187,7 @@
             box-shadow: 0 4px 12px rgba(21, 101, 192, 0.3);
         }
 
-        /* 🎼 시원한 대형 악보 출력 박스 */
+        /* 🎼 Sheet Music Display Box */
         .image-box {
             background: #fafafa;
             padding: 15px;
@@ -222,28 +222,28 @@
         <h1>🎼 찬양 악보 라이브러리</h1>
     </header>
 
-    <!-- 🔍 실시간 타이핑 검색창 -->
+    <!-- 🔍 Search Box -->
     <div class="search-container">
         <div class="search-box">
-            <input type="text" id="searchInput" class="search-input" placeholder="🔍 찬양 제목 또는 가사 일부를 입력하세요..." oninput="handleSearch()">
+            <input type="text" id="searchInput" class="search-input" placeholder="🔍 찬양 제목을 입력하세요 (예: 호산나)..." oninput="handleSearch()">
         </div>
     </div>
 
     <div class="container">
-        <!-- 📋 1. 찬양 목록 (기본 화면) -->
+        <!-- 📋 Song List -->
         <ul id="songList" class="song-list">
-            <div class="loading-text">찬양 악보 및 가사 데이터를 준비 중입니다... ⏳</div>
+            <div class="loading-text">악보 데이터를 불러오는 중입니다... ⏳</div>
         </ul>
 
-        <!-- 🎼 2. 악보 전용 뷰어 화면 (곡 선택 시 전환) -->
+        <!-- 🎼 Sheet Music Viewer -->
         <div id="viewerContainer" class="viewer-container">
             <button class="back-btn" onclick="closeViewer()">⬅ 목록으로 돌아가기</button>
             <h2 id="viewTitle" class="song-title-header">곡 제목</h2>
 
-            <!-- 🏷️ [찬미예수2000] [물소리] [일반] 악보집 선택 버튼 구역 -->
+            <!-- 🏷️ Source Tabs -->
             <div id="versionTabs" class="version-tabs"></div>
 
-            <!-- 🖼️ 시원하게 악보만 띄워주는 뷰어 -->
+            <!-- 🖼️ Image Box -->
             <div class="image-box">
                 <img id="viewImage" class="sheet-image" src="" alt="악보 이미지" style="display:none;">
                 <div id="noImageText" style="color:#90a4ae; padding:40px; font-weight:bold; font-size:20px; display:none;">
@@ -257,140 +257,131 @@
     const REPO_OWNER = "victae";
     const REPO_NAME = "praises";
 
-    let songDatabase = [];  // [제목, 가사내용] 지능형 데이터베이스
-    let allImageFiles = []; // 이미지 파일 전체 데이터
+    let groupedSongs = {}; // Key: Unique Song Title, Value: Array of image files
 
     window.onload = async function() {
-        await initializeData();
+        await loadSheetMusic();
     };
 
-    // 🚀 페이지 접속 시 백그라운드에서 0.1초 검색용 가사/이미지 데이터 인덱싱
-    async function initializeData() {
+    // Index sheet music images directly from the GitHub images/ folder
+    async function loadSheetMusic() {
         const listEl = document.getElementById('songList');
         try {
-            // 1. 가사 폴더 파일 스캔
-            const lyricsRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/lyrics`);
-            const lyricsFiles = lyricsRes.ok ? await lyricsRes.json() : [];
+            const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/images`);
+            if (!res.ok) throw new Error("Failed to load images");
+            
+            const files = await res.json();
+            groupedSongs = {};
 
-            // 2. 이미지 폴더 파일 스캔
-            const imagesRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/images`);
-            allImageFiles = imagesRes.ok ? await imagesRes.json() : [];
+            files.forEach(file => {
+                // Filter only image files
+                if (/\.(jpg|jpeg|png|gif|webp)$/i.test(file.name)) {
+                    // Extract name without extension
+                    const nameNoExt = file.name.substring(0, file.name.lastIndexOf('.'));
+                    
+                    // Separate song title and source tag (e.g., "호산나-찬미예수2000" -> mainTitle: "호산나", sourceTag: "찬미예수2000")
+                    let mainTitle = nameNoExt;
+                    let sourceTag = "일반 악보";
 
-            // 3. 가사 "내용"으로도 검색 가능하도록 백그라운드 텍스트 수집
-            songDatabase = await Promise.all(lyricsFiles.filter(f => f.name.endsWith('.txt')).map(async file => {
-                const title = file.name.replace('.txt', '');
-                let content = "";
-                try {
-                    const textRes = await fetch(file.download_url);
-                    content = await textRes.text();
-                } catch(e) {}
-                return {
-                    title: title,
-                    content: content
-                };
-            }));
+                    if (nameNoExt.includes('-')) {
+                        const parts = nameNoExt.split('-');
+                        mainTitle = parts[0].trim();
+                        sourceTag = parts.slice(1).join('-').trim();
+                    }
 
-            renderSongList(songDatabase);
+                    if (!groupedSongs[mainTitle]) {
+                        groupedSongs[mainTitle] = [];
+                    }
+
+                    groupedSongs[mainTitle].push({
+                        fullFileName: file.name,
+                        sourceTag: sourceTag,
+                        downloadUrl: file.download_url
+                    });
+                }
+            });
+
+            renderSongList(Object.keys(groupedSongs));
         } catch (e) {
-            listEl.innerHTML = '<div class="loading-text" style="color:red;">데이터를 가져오지 못했습니다. (인터넷 연결 확인)</div>';
+            listEl.innerHTML = '<div class="loading-text" style="color:red;">악보 데이터를 불러오지 못했습니다. (저장소/네트워크 확인)</div>';
         }
     }
 
-    // 📋 검색 목록 그리기
-    function renderSongList(songs) {
+    // Render song list
+    function renderSongList(songTitles) {
         const listEl = document.getElementById('songList');
         listEl.innerHTML = '';
 
-        if (songs.length === 0) {
-            listEl.innerHTML = '<div class="loading-text">검색된 찬양이 없습니다. 😊</div>';
+        if (songTitles.length === 0) {
+            listEl.innerHTML = '<div class="loading-text">검색된 악보가 없습니다. 😊</div>';
             return;
         }
 
-        songs.forEach(song => {
+        // Sort titles alphabetically
+        songTitles.sort().forEach(title => {
+            const versionsCount = groupedSongs[title].length;
             const li = document.createElement('li');
             li.className = 'song-item';
             li.innerHTML = `
-                <span>🎵 ${song.title}</span>
-                <span class="tag">악보 보기 ➔</span>
+                <span>🎼 ${title}</span>
+                <span class="tag">악보 ${versionsCount}개 ➔</span>
             `;
-            li.onclick = () => openViewer(song.title);
+            li.onclick = () => openViewer(title);
             listEl.appendChild(li);
         });
     }
 
-    // 🔍 제목 + 가사 내용 실시간 검색 함수
+    // Real-time search
     function handleSearch() {
         const query = document.getElementById('searchInput').value.trim().toLowerCase();
-        
+        const allTitles = Object.keys(groupedSongs);
+
         if (!query) {
-            renderSongList(songDatabase);
+            renderSongList(allTitles);
             return;
         }
 
-        const filtered = songDatabase.filter(song => 
-            song.title.toLowerCase().includes(query) || 
-            song.content.toLowerCase().includes(query)
-        );
+        const filtered = allTitles.filter(title => {
+            // Match against song title or source tags
+            const titleMatch = title.toLowerCase().includes(query);
+            const sourceMatch = groupedSongs[title].some(item => item.sourceTag.toLowerCase().includes(query));
+            return titleMatch || sourceMatch;
+        });
 
         renderSongList(filtered);
     }
 
-    // 🎼 악보 뷰어 열기 (사진 파일명 정밀 분석 매칭 수리 완료)
+    // Open viewer with tabs for different versions
     function openViewer(songTitle) {
         document.getElementById('songList').style.display = 'none';
         document.getElementById('viewerContainer').style.display = 'block';
         document.getElementById('viewTitle').innerText = songTitle;
 
-        // 💡 [핵심 해결] 파일명에 '-찬미예수2000', '-물소리'가 붙은 악보들을 지능적으로 모아오기
-        // 순수한 곡 제목 추출 (예: "가시관쓰신 예수님")
-        const pureTitle = songTitle.split('-')[0].trim();
-
-        const matchedImages = allImageFiles.filter(img => {
-            // 이미지 파일에서 확장자(.jpg, .png, .gif 등) 제거
-            const imgNameNoExt = img.name.substring(0, img.name.lastIndexOf('.'));
-            
-            // "가시관쓰신 예수님-찬미예수2000" 형태나 "가시관쓰신 예수님"으로 시작하면 모두 매칭
-            return imgNameNoExt === songTitle || 
-                   imgNameNoExt === pureTitle ||
-                   imgNameNoExt.startsWith(pureTitle + '-') ||
-                   imgNameNoExt.startsWith(songTitle + '-');
-        });
-
-        // 🏷️ 악보 출처(찬미예수2000, 물소리 등) 탭 버튼 생성
+        const versions = groupedSongs[songTitle] || [];
         const tabsEl = document.getElementById('versionTabs');
         tabsEl.innerHTML = '';
 
-        if (matchedImages.length > 0) {
-            matchedImages.forEach((imgFile, index) => {
-                const imgNameNoExt = imgFile.name.substring(0, imgFile.name.lastIndexOf('.'));
-                let sourceName = "일반 악보";
-
-                // 하이픈(-) 뒤에 붙은 단어 추출 (예: 가시관쓰신 예수님-찬미예수2000 -> 찬미예수2000)
-                if (imgNameNoExt.includes('-')) {
-                    sourceName = imgNameNoExt.split('-').slice(1).join('-');
-                }
-
+        if (versions.length > 0) {
+            versions.forEach((item, index) => {
                 const btn = document.createElement('button');
                 btn.className = `tab-btn ${index === 0 ? 'active' : ''}`;
-                btn.innerText = `🎼 ${sourceName}`;
+                btn.innerText = `🎼 ${item.sourceTag}`;
                 btn.onclick = () => {
                     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
-                    showImage(imgFile.download_url);
+                    showImage(item.downloadUrl);
                 };
                 tabsEl.appendChild(btn);
             });
 
-            // 매칭된 첫 번째 악보 기본 출력
-            showImage(matchedImages[0].download_url);
+            showImage(versions[0].downloadUrl);
         } else {
-            showImage(null); // 악보 없음
+            showImage(null);
         }
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // 악보 이미지 화면 렌더링
     function showImage(url) {
         const imgEl = document.getElementById('viewImage');
         const noImgText = document.getElementById('noImageText');
@@ -405,7 +396,6 @@
         }
     }
 
-    // 목록으로 돌아가기
     function closeViewer() {
         document.getElementById('viewerContainer').style.display = 'none';
         document.getElementById('songList').style.display = 'flex';
