@@ -8,7 +8,6 @@
         :root {
             --primary: #1565c0;
             --primary-light: #e3f2fd;
-            --accent: #2e7d32;
             --text: #263238;
             --bg: #f4f6f9;
             --border: #b0bec5;
@@ -28,18 +27,18 @@
             min-height: 100vh;
         }
 
-        /* 🟦 Header */
+        /* 🟦 상단 헤더 */
         header {
             background: linear-gradient(135deg, #0d47a1, #1565c0);
             color: white;
-            padding: 18px 20px;
+            padding: 16px 20px;
             text-align: center;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
-        header h1 { margin: 0; font-size: 24px; font-weight: bold; }
+        header h1 { margin: 0; font-size: 22px; font-weight: bold; }
 
-        /* 🔍 Search Input Area */
+        /* 🔍 검색창 구역 (악보 화면에서는 동적으로 숨김 처리됨) */
         .search-container {
             padding: 15px 20px;
             background: white;
@@ -72,16 +71,16 @@
             box-shadow: 0 0 0 4px var(--primary-light);
         }
 
-        /* 🟩 Main Layout Container */
+        /* 🟩 메인 데이터 컨테이너 */
         .container {
             max-width: 1000px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 15px;
             width: 100%;
             flex: 1;
         }
 
-        /* 📋 Song List */
+        /* 📋 찬양 검색 결과 목록 */
         .song-list {
             list-style: none;
             padding: 0;
@@ -110,7 +109,6 @@
         .song-item:hover, .song-item:active {
             background-color: var(--primary-light);
             border-color: var(--primary);
-            transform: translateY(-2px);
         }
 
         .song-item .tag {
@@ -122,89 +120,86 @@
             font-weight: bold;
         }
 
-        /* 🎼 Viewer Container */
+        /* 🎼 대형 악보 전용 뷰어 화면 (점선 박스 제거, 풀사이즈 적용) */
         .viewer-container {
             display: none;
             background: white;
-            border-radius: 16px;
-            padding: 25px;
-            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.08);
         }
 
+        /* 악보 화면에서 상단 이동 전용 대형 버튼 */
         .back-btn {
-            background: #455a64;
+            width: 100%;
+            background: #37474f;
             color: white;
             border: none;
-            padding: 14px 28px;
-            font-size: 18px;
+            padding: 16px;
+            font-size: 20px;
             font-weight: bold;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
-            margin-bottom: 20px;
-            display: inline-flex;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: center;
             align-items: center;
             gap: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         }
 
         .song-title-header {
-            font-size: 28px;
+            font-size: 26px;
             font-weight: bold;
             color: #0d47a1;
             margin-top: 0;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             text-align: center;
-            border-bottom: 3px solid var(--primary-light);
-            padding-bottom: 15px;
+            border-bottom: 2px solid var(--primary-light);
+            padding-bottom: 10px;
         }
 
-        /* 🏷️ Source Tabs */
+        /* 🏷️ 찬미예수2000, 물소리 등 출처 선택 탭 */
         .version-tabs {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 25px;
+            gap: 10px;
+            margin-bottom: 15px;
             justify-content: center;
         }
 
         .tab-btn {
             background: #f0f4f8;
             border: 2px solid var(--border);
-            padding: 12px 24px;
-            font-size: 18px;
+            padding: 10px 20px;
+            font-size: 17px;
             font-weight: bold;
-            border-radius: 30px;
+            border-radius: 25px;
             cursor: pointer;
             color: #37474f;
-            transition: all 0.2s;
         }
 
         .tab-btn.active {
             background: var(--primary);
             color: white;
             border-color: var(--primary);
-            box-shadow: 0 4px 12px rgba(21, 101, 192, 0.3);
+            box-shadow: 0 4px 10px rgba(21, 101, 192, 0.3);
         }
 
-        /* 🎼 Sheet Music Display Box */
+        /* 🖼️ 점선 테두리 제거! 악보 원본 크기 극대화 뷰어 */
         .image-box {
-            background: #fafafa;
-            padding: 15px;
-            border-radius: 12px;
-            border: 2px dashed var(--border);
+            width: 100%;
             text-align: center;
-            min-height: 400px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            margin-top: 10px;
         }
 
         .sheet-image {
+            width: 100%;       /* 박스 여백 없이 화면에 꽉 차게 연출 */
             max-width: 100%;
             height: auto;
-            border-radius: 6px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            border-radius: 4px;
+            display: block;
+            margin: 0 auto;
         }
 
         .loading-text {
@@ -222,28 +217,28 @@
         <h1>🎼 찬양 악보 라이브러리</h1>
     </header>
 
-    <!-- 🔍 Search Box -->
-    <div class="search-container">
+    <!-- 🔍 검색창 구역 (악보 열면 숨겨짐) -->
+    <div id="searchContainer" class="search-container">
         <div class="search-box">
-            <input type="text" id="searchInput" class="search-input" placeholder="🔍 찬양 제목을 입력하세요 (예: 호산나)..." oninput="handleSearch()">
+            <input type="text" id="searchInput" class="search-input" placeholder="🔍 찬양 제목을 입력하세요 (예: 호산나, 하나복)..." oninput="handleSearch()">
         </div>
     </div>
 
     <div class="container">
-        <!-- 📋 Song List -->
+        <!-- 📋 찬양 목록 -->
         <ul id="songList" class="song-list">
-            <div class="loading-text">악보 데이터를 불러오는 중입니다... ⏳</div>
+            <div class="loading-text">저장소의 전체 악보 데이터를 불러오는 중... ⏳</div>
         </ul>
 
-        <!-- 🎼 Sheet Music Viewer -->
+        <!-- 🎼 악보 전용 대형 뷰어 -->
         <div id="viewerContainer" class="viewer-container">
-            <button class="back-btn" onclick="closeViewer()">⬅ 목록으로 돌아가기</button>
+            <button class="back-btn" onclick="closeViewer()">⬅ 다른 악보 검색하기</button>
             <h2 id="viewTitle" class="song-title-header">곡 제목</h2>
 
-            <!-- 🏷️ Source Tabs -->
+            <!-- 🏷️ 악보 출처 탭 (찬미예수2000, 물소리 등) -->
             <div id="versionTabs" class="version-tabs"></div>
 
-            <!-- 🖼️ Image Box -->
+            <!-- 🖼️ 점선 제거 완료된 순수 대형 악보 출력 구역 -->
             <div class="image-box">
                 <img id="viewImage" class="sheet-image" src="" alt="악보 이미지" style="display:none;">
                 <div id="noImageText" style="color:#90a4ae; padding:40px; font-weight:bold; font-size:20px; display:none;">
@@ -257,68 +252,78 @@
     const REPO_OWNER = "victae";
     const REPO_NAME = "praises";
 
-    let groupedSongs = {}; // Key: Unique Song Title, Value: Array of image files
+    let groupedSongs = {}; // Key: 찬양제목, Value: 악보파일목록 배열
 
     window.onload = async function() {
-        await loadSheetMusic();
+        await loadAllSheetMusic();
     };
 
-    // Index sheet music images directly from the GitHub images/ folder
-    async function loadSheetMusic() {
+    // 🚀 [수리] 깃허브 전체 트리 스캔 방식을 적용하여 수천 개의 파일도 누락 없이 100% 수집
+    async function loadAllSheetMusic() {
         const listEl = document.getElementById('songList');
         try {
-            const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/images`);
-            if (!res.ok) throw new Error("Failed to load images");
+            // recursive=1 옵션으로 images/ 폴더 안의 모든 파일 목록을 한 번에 싹 긁어옵니다.
+            const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/git/trees/main?recursive=1`);
+            if (!res.ok) throw new Error("전체 데이터 로드 실패");
             
-            const files = await res.json();
+            const data = await res.json();
             groupedSongs = {};
 
-            files.forEach(file => {
-                // Filter only image files
-                if (/\.(jpg|jpeg|png|gif|webp)$/i.test(file.name)) {
-                    // Extract name without extension
-                    const nameNoExt = file.name.substring(0, file.name.lastIndexOf('.'));
-                    
-                    // Separate song title and source tag (e.g., "호산나-찬미예수2000" -> mainTitle: "호산나", sourceTag: "찬미예수2000")
-                    let mainTitle = nameNoExt;
-                    let sourceTag = "일반 악보";
+            // images/ 폴더 내부의 이미지 파일만 정밀 추출
+            const imageFiles = data.tree.filter(item => 
+                item.path.startsWith('images/') && 
+                /\.(jpg|jpeg|png|gif|webp)$/i.test(item.path)
+            );
 
-                    if (nameNoExt.includes('-')) {
-                        const parts = nameNoExt.split('-');
-                        mainTitle = parts[0].trim();
-                        sourceTag = parts.slice(1).join('-').trim();
-                    }
+            imageFiles.forEach(file => {
+                // 경로에서 파일명만 추출 (예: "images/호산나-물소리.jpg" -> "호산나-물소리.jpg")
+                const fileName = file.path.replace('images/', '');
+                const nameNoExt = fileName.substring(0, fileName.lastIndexOf('.'));
+                
+                // 한글 유니코드 정규화 (자음/모음 분리현상 완벽 방지)
+                const normalizedName = nameNoExt.normalize('NFC');
 
-                    if (!groupedSongs[mainTitle]) {
-                        groupedSongs[mainTitle] = [];
-                    }
+                let mainTitle = normalizedName;
+                let sourceTag = "일반 악보";
 
-                    groupedSongs[mainTitle].push({
-                        fullFileName: file.name,
-                        sourceTag: sourceTag,
-                        downloadUrl: file.download_url
-                    });
+                if (normalizedName.includes('-')) {
+                    const parts = normalizedName.split('-');
+                    mainTitle = parts[0].trim();
+                    sourceTag = parts.slice(1).join('-').trim();
                 }
+
+                if (!groupedSongs[mainTitle]) {
+                    groupedSongs[mainTitle] = [];
+                }
+
+                // GitHub Raw Image URL 직접 생성
+                const downloadUrl = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/${file.path}`;
+
+                groupedSongs[mainTitle].push({
+                    fullFileName: fileName,
+                    sourceTag: sourceTag,
+                    downloadUrl: downloadUrl
+                });
             });
 
             renderSongList(Object.keys(groupedSongs));
         } catch (e) {
-            listEl.innerHTML = '<div class="loading-text" style="color:red;">악보 데이터를 불러오지 못했습니다. (저장소/네트워크 확인)</div>';
+            listEl.innerHTML = '<div class="loading-text" style="color:red;">악보 전체 목록을 불러오지 못했습니다. 네트워크를 확인해 주세요.</div>';
         }
     }
 
-    // Render song list
+    // 📋 검색 목록 출력
     function renderSongList(songTitles) {
         const listEl = document.getElementById('songList');
         listEl.innerHTML = '';
 
         if (songTitles.length === 0) {
-            listEl.innerHTML = '<div class="loading-text">검색된 악보가 없습니다. 😊</div>';
+            listEl.innerHTML = '<div class="loading-text">일치하는 악보가 없습니다. 😊</div>';
             return;
         }
 
-        // Sort titles alphabetically
-        songTitles.sort().forEach(title => {
+        // 가나다 순 정렬
+        songTitles.sort((a, b) => a.localeCompare(b, 'ko')).forEach(title => {
             const versionsCount = groupedSongs[title].length;
             const li = document.createElement('li');
             li.className = 'song-item';
@@ -331,9 +336,9 @@
         });
     }
 
-    // Real-time search
+    // 🔍 지능형 실시간 검색 (호산나, 하나복 등 완벽 감지)
     function handleSearch() {
-        const query = document.getElementById('searchInput').value.trim().toLowerCase();
+        const query = document.getElementById('searchInput').value.trim().toLowerCase().normalize('NFC');
         const allTitles = Object.keys(groupedSongs);
 
         if (!query) {
@@ -342,17 +347,21 @@
         }
 
         const filtered = allTitles.filter(title => {
-            // Match against song title or source tags
-            const titleMatch = title.toLowerCase().includes(query);
-            const sourceMatch = groupedSongs[title].some(item => item.sourceTag.toLowerCase().includes(query));
+            const normTitle = title.toLowerCase().normalize('NFC');
+            const titleMatch = normTitle.includes(query);
+            const sourceMatch = groupedSongs[title].some(item => 
+                item.sourceTag.toLowerCase().normalize('NFC').includes(query)
+            );
             return titleMatch || sourceMatch;
         });
 
         renderSongList(filtered);
     }
 
-    // Open viewer with tabs for different versions
+    // 🎼 대형 악보 전용 뷰어 열기
     function openViewer(songTitle) {
+        // 검색창과 목록 숨김 ➔ 악보 뷰어 띄우기
+        document.getElementById('searchContainer').style.display = 'none';
         document.getElementById('songList').style.display = 'none';
         document.getElementById('viewerContainer').style.display = 'block';
         document.getElementById('viewTitle').innerText = songTitle;
@@ -382,13 +391,14 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    // 악보 이미지 표시
     function showImage(url) {
         const imgEl = document.getElementById('viewImage');
         const noImgText = document.getElementById('noImageText');
 
         if (url) {
             imgEl.src = url;
-            imgEl.style.display = 'inline-block';
+            imgEl.style.display = 'block';
             noImgText.style.display = 'none';
         } else {
             imgEl.style.display = 'none';
@@ -396,8 +406,10 @@
         }
     }
 
+    // ⬅ [다른 악보 검색하기] 누르면 검색 화면으로 복귀
     function closeViewer() {
         document.getElementById('viewerContainer').style.display = 'none';
+        document.getElementById('searchContainer').style.display = 'block';
         document.getElementById('songList').style.display = 'flex';
     }
 </script>
