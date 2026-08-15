@@ -170,6 +170,7 @@
             border-radius: 25px;
             cursor: pointer;
             color: #37474f;
+            transition: all 0.2s;
         }
 
         .tab-btn.active {
@@ -237,62 +238,26 @@
     const REPO_OWNER = "victae";
     const REPO_NAME = "praises";
 
-    let rawData = [];      // ccm_data.json 원본 데이터
-    let songsList = [];    // 검색 최적화 인덱스 배열
+    let songsList = [];
 
     window.onload = async function() {
         await loadJsonData();
     };
 
-    // 🚀 찬송가 앱처럼 1개의 JSON 파일만 직통으로 읽어와 초고속 초기화
+    // 🚀 ccm_data.json 단일 파일 로드 (초고속 캐싱)
     async function loadJsonData() {
         const listEl = document.getElementById('songList');
         try {
-            // 캐시 방지 파라미터(?v=...)를 붙여 항상 최신 ccm_data.json 로드
             const res = await fetch(`ccm_data.json?v=${Date.now()}`);
             if (!res.ok) throw new Error("JSON 로드 실패");
             
-            rawData = await res.json();
-            
-            // JSON 포맷이 배열 형태이든 객체 형태이든 유연하게 파싱
-            if (Array.isArray(rawData)) {
-                songsList = rawData.map(item => parseSongItem(item));
-            } else {
-                songsList = Object.keys(rawData).map(key => parseSongItem(rawData[key], key));
-            }
-
-            renderSongList(songsList.slice(0, 50)); // 초기 로딩 시 상위 50곡 우선 렌더링
+            songsList = await res.json();
+            renderSongList(songsList.slice(0, 50));
         } catch (e) {
-            listEl.innerHTML = '<div class="loading-text" style="color:red;">ccm_data.json을 불러오지 못했습니다.<br>파일 위치와 이름을 확인해 주세요.</div>';
+            listEl.innerHTML = '<div class="loading-text" style="color:red;">ccm_data.json을 불러오지 못했습니다.<br>make_json.py 실행 여부를 확인해 주세요.</div>';
         }
     }
 
-    // JSON 항목 정규화 파서
-    function parseSongItem(item, keyName = "") {
-        const title = (item.title || keyName || item.name || "").normalize('NFC');
-        const lyrics = (item.lyrics || item.content || item.text || "").normalize('NFC');
-        
-        // 악보 이미지 파일 목록 추출 (배열 또는 단일 파일명 대응)
-        let images = [];
-        if (item.images && Array.isArray(item.images)) {
-            images = item.images;
-        } else if (item.image) {
-            images = [item.image];
-        } else if (item.filename) {
-            images = [item.filename];
-        } else {
-            // 별도 이미지 필드가 없는 경우 기본 확장자 추정 매칭
-            images = [`${title}.jpg`];
-        }
-
-        return {
-            title: title,
-            lyrics: lyrics,
-            images: images
-        };
-    }
-
-    // 📋 검색 목록 렌더링
     function renderSongList(songs) {
         const listEl = document.getElementById('songList');
         listEl.innerHTML = '';
@@ -303,35 +268,37 @@
         }
 
         songs.forEach(song => {
+            const count = song.images ? song.images.length : 0;
             const li = document.createElement('li');
             li.className = 'song-item';
             li.innerHTML = `
                 <span>🎼 ${song.title}</span>
-                <span class="tag">악보 보기 ➔</span>
+                <span class="tag">악보 ${count}개 ➔</span>
             `;
             li.onclick = () => openViewer(song);
             listEl.appendChild(li);
         });
     }
 
-    // 🔍 제목 + 가사 내용 통합 초고속 실시간 검색
+    // 🔍 제목 + 가사 본문 통합 실시간 검색
     function handleSearch() {
-        const query = document.getElementById('searchInput').value.trim().toLowerCase().normalize('NFC');
+        const query = document.getElementById('searchInput').value.trim().toLowerCase().replace(/\s+/g, '');
         
         if (!query) {
             renderSongList(songsList.slice(0, 50));
             return;
         }
 
-        const filtered = songsList.filter(song => 
-            song.title.toLowerCase().includes(query) || 
-            song.lyrics.toLowerCase().includes(query)
-        );
+        const filtered = songsList.filter(song => {
+            const matchTitle = song.title.toLowerCase().replace(/\s+/g, '').includes(query);
+            const matchLyrics = song.lyrics && song.lyrics.toLowerCase().replace(/\s+/g, '').includes(query);
+            return matchTitle || matchLyrics;
+        });
 
-        renderSongList(filtered.slice(0, 100)); // 검색 결과 최대 100개 쾌속 렌더링
+        renderSongList(filtered.slice(0, 100));
     }
 
-    // 🎼 악보 뷰어 열기 (탭 자동 분기)
+    // 🎼 악보 뷰어 및 출처 탭(찬2000, 물소리 등) 자동 변환
     function openViewer(song) {
         document.getElementById('searchContainer').style.display = 'none';
         document.getElementById('songList').style.display = 'none';
@@ -344,17 +311,22 @@
         if (song.images && song.images.length > 0) {
             song.images.forEach((imgName, index) => {
                 const nameNoExt = imgName.substring(0, imgName.lastIndexOf('.')) || imgName;
-                let sourceTag = "일반 악보";
-
+                
+                // 🏷️ 출처명 축약 파싱 (찬미예수2000 -> 찬2000, 많은 물소리 -> 물소리)
+                let tag = "일반";
                 if (nameNoExt.includes('-')) {
-                    sourceTag = nameNoExt.split('-').slice(1).join('-');
+                    tag = nameNoExt.split('-').slice(1).join('-');
+                } else if (nameNoExt.includes('_')) {
+                    tag = '#' + nameNoExt.split('_').slice(1).join('_');
                 }
+
+                tag = tag.replace(/찬미예수\s*2000|찬미예수/g, '찬2000')
+                         .replace(/많은\s*물소리/g, '물소리');
 
                 const btn = document.createElement('button');
                 btn.className = `tab-btn ${index === 0 ? 'active' : ''}`;
-                btn.innerText = `🎼 ${sourceTag}`;
+                btn.innerText = `🎼 ${tag}`;
                 
-                // GitHub raw 이미지 직접 링크
                 const imgUrl = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/images/${encodeURIComponent(imgName)}`;
                 
                 btn.onclick = () => {
