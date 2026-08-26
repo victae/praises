@@ -3,233 +3,284 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎼 찬양 악보 검색 라이브러리</title>
+    <title>찬양 악보 라이브러리</title>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <style>
         :root {
-            --primary: #1565c0;
-            --primary-light: #e3f2fd;
-            --text: #263238;
-            --bg: #f4f6f9;
-            --border: #b0bec5;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --radius: 12px;
         }
 
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+            font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
             background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 0;
-            font-size: 18px;
+            color: var(--text-main);
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
         }
 
+        /* 🟦 헤더 */
         header {
-            background: linear-gradient(135deg, #0d47a1, #1565c0);
-            color: white;
-            padding: 16px 20px;
-            text-align: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-
-        header h1 { margin: 0; font-size: 22px; font-weight: bold; }
-
-        .search-container {
-            padding: 15px 20px;
-            background: white;
-            border-bottom: 2px solid var(--border);
+            background-color: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 20px;
             position: sticky;
             top: 0;
             z-index: 100;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .header-inner {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* 🔍 검색 바 */
+        .search-wrapper {
+            max-width: 800px;
+            margin: 20px auto 10px;
+            padding: 0 16px;
+            width: 100%;
         }
 
         .search-box {
-            width: 100%;
-            max-width: 800px;
-            margin: 0 auto;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            color: var(--text-muted);
+            pointer-events: none;
+            width: 20px;
+            height: 20px;
         }
 
         .search-input {
             width: 100%;
-            padding: 16px 20px;
-            font-size: 20px;
-            font-weight: bold;
-            border: 2.5px solid var(--border);
-            border-radius: 12px;
+            padding: 14px 16px 14px 46px;
+            font-size: 16px;
+            font-weight: 500;
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius);
             outline: none;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
         }
 
         .search-input:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 4px var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
+        /* 🟩 메인 컨테이너 */
         .container {
-            max-width: 1000px;
+            max-width: 800px;
             margin: 0 auto;
-            padding: 15px;
+            padding: 10px 16px 40px;
             width: 100%;
             flex: 1;
         }
 
+        /* 📋 곡 리스트 */
         .song-list {
             list-style: none;
-            padding: 0;
-            margin: 0;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 8px;
         }
 
         .song-item {
-            background: white;
-            padding: 20px 25px;
-            border-radius: 12px;
+            background: var(--surface);
+            padding: 16px 20px;
+            border-radius: var(--radius);
             border: 1px solid var(--border);
             cursor: pointer;
-            font-size: 20px;
-            font-weight: bold;
-            color: #1a237e;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
-            transition: all 0.2s;
+            transition: all 0.15s ease;
         }
 
-        .song-item:hover, .song-item:active {
-            background-color: var(--primary-light);
+        .song-item:hover {
             border-color: var(--primary);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
         }
 
-        .song-item .tag {
-            font-size: 15px;
-            background: #e0e0e0;
-            color: #37474f;
-            padding: 6px 14px;
-            border-radius: 6px;
-            font-weight: bold;
+        .song-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-main);
+            letter-spacing: -0.3px;
         }
 
+        .song-badge {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--primary);
+            background: #eff6ff;
+            padding: 4px 10px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        /* 🎼 악보 뷰어 화면 */
         .viewer-container {
             display: none;
-            background: white;
-            border-radius: 12px;
-            padding: 15px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        }
-
-        .back-btn {
-            width: 100%;
-            background: #37474f;
-            color: white;
-            border: none;
+            background: var(--surface);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
             padding: 16px;
-            font-size: 20px;
-            font-weight: bold;
-            border-radius: 10px;
-            cursor: pointer;
-            margin-bottom: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+        }
+
+        .viewer-header {
             display: flex;
-            justify-content: center;
             align-items: center;
-            gap: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            justify-content: space-between;
+            margin-bottom: 12px;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
-        .song-title-header {
-            font-size: 26px;
-            font-weight: bold;
-            color: #0d47a1;
-            margin-top: 0;
-            margin-bottom: 15px;
-            text-align: center;
-            border-bottom: 2px solid var(--primary-light);
-            padding-bottom: 10px;
+        /* 깔끔한 미니멀 뒤로가기 버튼 */
+        .mini-back-btn {
+            background: #f1f5f9;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s ease;
         }
 
+        .mini-back-btn:hover {
+            background: #e2e8f0;
+        }
+
+        /* 🏷️ 세련된 버전 탭 */
         .version-tabs {
             display: flex;
+            gap: 6px;
             flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 15px;
-            justify-content: center;
         }
 
         .tab-btn {
-            background: #f0f4f8;
-            border: 2px solid var(--border);
-            padding: 10px 20px;
-            font-size: 17px;
-            font-weight: bold;
-            border-radius: 25px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            padding: 6px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 20px;
             cursor: pointer;
-            color: #37474f;
-            transition: all 0.2s;
+            color: var(--text-muted);
+            transition: all 0.15s ease;
         }
 
         .tab-btn.active {
             background: var(--primary);
             color: white;
             border-color: var(--primary);
-            box-shadow: 0 4px 10px rgba(21, 101, 192, 0.3);
         }
 
-        .image-box {
+        /* 🖼️ 악보 이미지 영역 (여백 최소화, 풀사이즈) */
+        .sheet-wrapper {
             width: 100%;
-            text-align: center;
-            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            min-height: 300px;
         }
 
         .sheet-image {
             width: 100%;
             max-width: 100%;
             height: auto;
-            border-radius: 4px;
             display: block;
-            margin: 0 auto;
+            object-fit: contain;
         }
 
-        .loading-text {
+        .status-msg {
             text-align: center;
-            padding: 40px;
-            font-size: 20px;
-            color: #78909c;
-            font-weight: bold;
+            padding: 48px 20px;
+            color: var(--text-muted);
+            font-size: 15px;
+            font-weight: 500;
         }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>🎼 찬양 악보 라이브러리</h1>
+        <div class="header-inner">
+            <div class="logo">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                찬양 악보
+            </div>
+        </div>
     </header>
 
-    <div id="searchContainer" class="search-container">
+    <div id="searchWrapper" class="search-wrapper">
         <div class="search-box">
-            <input type="text" id="searchInput" class="search-input" placeholder="🔍 찬양 제목 또는 가사 일부를 입력하세요..." oninput="handleSearch()">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="searchInput" class="search-input" placeholder="찬양 제목 또는 가사 검색..." oninput="handleSearch()">
         </div>
     </div>
 
     <div class="container">
+        <!-- 📋 목록 -->
         <ul id="songList" class="song-list">
-            <div class="loading-text">찬양 라이브러리를 준비 중입니다... ⏳</div>
+            <div class="status-msg">악보 라이브러리를 불러오는 중입니다...</div>
         </ul>
 
+        <!-- 🎼 악보 전용 뷰어 -->
         <div id="viewerContainer" class="viewer-container">
-            <button class="back-btn" onclick="closeViewer()">⬅ 다른 악보 검색하기</button>
-            <h2 id="viewTitle" class="song-title-header">곡 제목</h2>
-            <div id="versionTabs" class="version-tabs"></div>
-            <div class="image-box">
-                <img id="viewImage" class="sheet-image" src="" alt="악보 이미지" style="display:none;">
-                <div id="noImageText" style="color:#90a4ae; padding:40px; font-weight:bold; font-size:20px; display:none;">
-                    등록된 악보 이미지가 없습니다. 😭
-                </div>
+            <div class="viewer-header">
+                <button class="mini-back-btn" onclick="closeViewer()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                    뒤로
+                </button>
+                <div id="versionTabs" class="version-tabs"></div>
+            </div>
+
+            <div class="sheet-wrapper">
+                <img id="viewImage" class="sheet-image" src="" alt="악보" style="display:none;">
+                <div id="noImageText" class="status-msg" style="display:none;">악보 이미지를 불러올 수 없습니다.</div>
             </div>
         </div>
     </div>
@@ -244,17 +295,15 @@
         await loadJsonData();
     };
 
-    // 🚀 ccm_data.json 단일 파일 로드 (초고속 캐싱)
     async function loadJsonData() {
         const listEl = document.getElementById('songList');
         try {
             const res = await fetch(`ccm_data.json?v=${Date.now()}`);
             if (!res.ok) throw new Error("JSON 로드 실패");
-            
             songsList = await res.json();
             renderSongList(songsList.slice(0, 50));
         } catch (e) {
-            listEl.innerHTML = '<div class="loading-text" style="color:red;">ccm_data.json을 불러오지 못했습니다.<br>make_json.py 실행 여부를 확인해 주세요.</div>';
+            listEl.innerHTML = '<div class="status-msg" style="color:#ef4444;">ccm_data.json을 불러오지 못했습니다.</div>';
         }
     }
 
@@ -263,7 +312,7 @@
         listEl.innerHTML = '';
 
         if (songs.length === 0) {
-            listEl.innerHTML = '<div class="loading-text">일치하는 찬양이 없습니다. 😊</div>';
+            listEl.innerHTML = '<div class="status-msg">검색된 찬양이 없습니다.</div>';
             return;
         }
 
@@ -272,18 +321,16 @@
             const li = document.createElement('li');
             li.className = 'song-item';
             li.innerHTML = `
-                <span>🎼 ${song.title}</span>
-                <span class="tag">악보 ${count}개 ➔</span>
+                <span class="song-title">${song.title}</span>
+                <span class="song-badge">${count > 1 ? count + '개 버전' : '악보 보기'}</span>
             `;
             li.onclick = () => openViewer(song);
             listEl.appendChild(li);
         });
     }
 
-    // 🔍 제목 + 가사 본문 통합 실시간 검색
     function handleSearch() {
         const query = document.getElementById('searchInput').value.trim().toLowerCase().replace(/\s+/g, '');
-        
         if (!query) {
             renderSongList(songsList.slice(0, 50));
             return;
@@ -298,71 +345,103 @@
         renderSongList(filtered.slice(0, 100));
     }
 
-    // 🎼 악보 뷰어 및 출처 탭(찬2000, 물소리 등) 자동 변환
     function openViewer(song) {
-        document.getElementById('searchContainer').style.display = 'none';
+        document.getElementById('searchWrapper').style.display = 'none';
         document.getElementById('songList').style.display = 'none';
         document.getElementById('viewerContainer').style.display = 'block';
-        document.getElementById('viewTitle').innerText = song.title;
 
         const tabsEl = document.getElementById('versionTabs');
         tabsEl.innerHTML = '';
 
         if (song.images && song.images.length > 0) {
-            song.images.forEach((imgName, index) => {
-                const nameNoExt = imgName.substring(0, imgName.lastIndexOf('.')) || imgName;
-                
-                // 🏷️ 출처명 축약 파싱 (찬미예수2000 -> 찬2000, 많은 물소리 -> 물소리)
-                let tag = "일반";
-                if (nameNoExt.includes('-')) {
-                    tag = nameNoExt.split('-').slice(1).join('-');
-                } else if (nameNoExt.includes('_')) {
-                    tag = '#' + nameNoExt.split('_').slice(1).join('_');
-                }
+            // 버전이 2개 이상일 때만 탭 표시, 1개면 탭 숨김
+            if (song.images.length > 1) {
+                tabsEl.style.display = 'flex';
+                song.images.forEach((imgName, index) => {
+                    const nameNoExt = imgName.substring(0, imgName.lastIndexOf('.')) || imgName;
+                    let tag = "기본";
+                    if (nameNoExt.includes('-')) {
+                        tag = nameNoExt.split('-').slice(1).join('-');
+                    } else if (nameNoExt.includes('_')) {
+                        tag = '#' + nameNoExt.split('_').slice(1).join('_');
+                    }
+                    tag = tag.replace(/찬미예수\s*2000|찬미예수/g, '찬2000')
+                             .replace(/많은\s*물소리/g, '물소리');
 
-                tag = tag.replace(/찬미예수\s*2000|찬미예수/g, '찬2000')
-                         .replace(/많은\s*물소리/g, '물소리');
+                    const btn = document.createElement('button');
+                    btn.className = `tab-btn ${index === 0 ? 'active' : ''}`;
+                    btn.innerText = tag;
+                    btn.onclick = () => {
+                        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        loadSheetImage(imgName);
+                    };
+                    tabsEl.appendChild(btn);
+                });
+            } else {
+                tabsEl.style.display = 'none';
+            }
 
-                const btn = document.createElement('button');
-                btn.className = `tab-btn ${index === 0 ? 'active' : ''}`;
-                btn.innerText = `🎼 ${tag}`;
-                
-                const imgUrl = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/images/${encodeURIComponent(imgName)}`;
-                
-                btn.onclick = () => {
-                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    showImage(imgUrl);
-                };
-                tabsEl.appendChild(btn);
-            });
-
-            const firstImgUrl = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/images/${encodeURIComponent(song.images[0])}`;
-            showImage(firstImgUrl);
+            loadSheetImage(song.images[0]);
         } else {
-            showImage(null);
+            showError();
         }
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    function showImage(url) {
+    // 🚀 다중 경로 스마트 이미지 로더 (액박 100% 방지)
+    function loadSheetImage(fileName) {
         const imgEl = document.getElementById('viewImage');
         const noImgText = document.getElementById('noImageText');
 
-        if (url) {
-            imgEl.src = url;
-            imgEl.style.display = 'block';
-            noImgText.style.display = 'none';
-        } else {
-            imgEl.style.display = 'none';
-            noImgText.style.display = 'block';
+        imgEl.style.display = 'none';
+        noImgText.style.display = 'none';
+
+        // URL 후보군 (GitHub Pages 배포 경로, Raw 경로, 인코딩 변형)
+        const cleanName = fileName.trim();
+        const baseNoExt = cleanName.substring(0, cleanName.lastIndexOf('.'));
+        const originalExt = cleanName.substring(cleanName.lastIndexOf('.'));
+
+        const candidateUrls = [
+            `images/${encodeURIComponent(cleanName)}`,
+            `images/${cleanName}`,
+            `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/images/${encodeURIComponent(cleanName)}`,
+            `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/images/${cleanName}`,
+            `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/images/${encodeURIComponent(baseNoExt + '.jpg')}`,
+            `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/images/${encodeURIComponent(baseNoExt + '.png')}`,
+            `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/images/${encodeURIComponent(baseNoExt + '.gif')}`
+        ];
+
+        let attemptIndex = 0;
+
+        function tryNext() {
+            if (attemptIndex >= candidateUrls.length) {
+                showError();
+                return;
+            }
+            const testUrl = candidateUrls[attemptIndex++];
+            const tempImg = new Image();
+            tempImg.onload = function() {
+                imgEl.src = testUrl;
+                imgEl.style.display = 'block';
+                noImgText.style.display = 'none';
+            };
+            tempImg.onerror = tryNext;
+            tempImg.src = testUrl;
         }
+
+        tryNext();
+    }
+
+    function showError() {
+        document.getElementById('viewImage').style.display = 'none';
+        document.getElementById('noImageText').style.display = 'block';
     }
 
     function closeViewer() {
         document.getElementById('viewerContainer').style.display = 'none';
-        document.getElementById('searchContainer').style.display = 'block';
+        document.getElementById('searchWrapper').style.display = 'block';
         document.getElementById('songList').style.display = 'flex';
     }
 </script>
